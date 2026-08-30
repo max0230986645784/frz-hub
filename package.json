@@ -1,0 +1,64 @@
+{
+  "name": "velora-os",
+  "productName": "Velora OS",
+  "description": "Centre de controle du PC : dashboard, launcher, jeux, media, outils, reseau et l'agent Velora AI",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "main": "electron/main.cjs",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "lint": "oxlint",
+    "preview": "vite preview",
+    "desktop": "npm run build && electron .",
+    "desktop:dev": "VITE_DEV_SERVER_URL=http://localhost:5173 electron .",
+    "dist:win": "npm run build && electron-builder --win",
+    "dist:linux": "npm run build && electron-builder --linux"
+  },
+  "build": {
+    "appId": "os.velora.app",
+    "productName": "Velora OS",
+    "files": [
+      "dist/**",
+      "electron/**"
+    ],
+    "directories": {
+      "buildResources": "build",
+      "output": "release"
+    },
+    "win": {
+      "target": [
+        "nsis"
+      ],
+      "icon": "build/icon.ico",
+      "signAndEditExecutable": false
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "artifactName": "Velora-OS-Setup-${version}.${ext}"
+    },
+    "linux": {
+      "target": [
+        "AppImage"
+      ],
+      "category": "Utility",
+      "icon": "build/icon.png"
+    }
+  },
+  "dependencies": {
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8"
+  },
+  "devDependencies": {
+    "@types/react": "^19.2.17",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^5.2.0",
+    "electron": "^33.4.11",
+    "electron-builder": "^25.1.8",
+    "oxlint": "^1.80.0",
+    "typescript": "~6.0.2",
+    "vite": "^7.3.6"
+  }
+}
