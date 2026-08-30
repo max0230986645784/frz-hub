@@ -1,0 +1,43 @@
+# Velora OS
+
+Centre de controle du PC : dashboard, launcher, Game Center, Media Center, outils, reseau, GitHub et l'agent **Velora AI** (cerveau 100% local, aucun modele externe).
+
+## Stack
+
+- Electron (processus principal en CommonJS, `electron/`)
+- React 19 + TypeScript + Vite (renderer, `src/`)
+- IPC unique et liste blanche de canaux (`electron/ipc.cjs`, `electron/preload.cjs`)
+
+## Developpement
+
+```bash
+npm install
+npm run build        # tsc -b + vite build
+npm run lint         # oxlint
+npm run desktop      # build + lance Electron
+npm run desktop:dev  # Electron sur le serveur Vite (npm run dev en parallele)
+```
+
+Node.js 20.19+ ou 22.12+ est requis par Vite 7.
+
+## Installeur Windows
+
+```bash
+npm run dist:win     # NSIS -> release/Velora-OS-Setup-<version>.exe
+```
+
+## Modules
+
+| Module | Contenu |
+| --- | --- |
+| Dashboard | heure, meteo, CPU/RAM/GPU, reseau, lancements recents, jeux favoris |
+| Launcher | projets et programmes, ajout de `.exe`/`.bat`/`.py`, scan du PC |
+| Velora AI | comprehension du francais, actions locales, memoire, commandes apprises |
+| Velora Studio | generation de vrais projets sur le disque a partir de blueprints locaux |
+| Game Center | scan Steam/Epic, lancement, temps de jeu, favoris |
+| Media Center | films, series, musique, posters locaux, lecteur |
+| Tools | conversion video/audio/image, PDF, archives, nettoyage, mots de passe, notes |
+| Network | appareils du reseau local, ping, IP publique, test de debit |
+| GitHub | depots, activite, PR, notifications, clone |
+
+Les tokens OAuth sont chiffres avec `safeStorage` quand la plateforme le permet.
