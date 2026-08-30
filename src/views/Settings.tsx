@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { invoke, type Account } from '../lib/api'
+import { avatarUrl, invoke, type Account } from '../lib/api'
 import { useAsync } from '../lib/hooks'
 import type { Toast } from '../App'
 
@@ -52,11 +52,30 @@ export default function Settings({
       <section className="card">
         <h3>Compte</h3>
         <div className="row">
-          {account.avatar && <img src={account.avatar} alt="" style={{ width: 44, height: 44, borderRadius: 14 }} />}
+          {account.avatar ? (
+            <img src={avatarUrl(account.avatar)} alt="" style={{ width: 44, height: 44, borderRadius: 14, objectFit: 'cover' }} />
+          ) : (
+            <span className="icon" style={{ width: 44, height: 44 }}>👤</span>
+          )}
           <div style={{ flex: 1 }}>
             <b>{account.name}</b>
             <div className="muted" style={{ fontSize: 12 }}>connecte via {account.provider}</div>
           </div>
+          <button
+            className="btn small"
+            onClick={async () => {
+              try {
+                const next = await invoke<Account | null>('account:pickAvatar')
+                if (!next) return
+                onAccount(next)
+                notify('Photo de profil mise a jour.')
+              } catch (error) {
+                notify(error instanceof Error ? error.message : String(error))
+              }
+            }}
+          >
+            Changer la photo
+          </button>
           <button
             className="btn small danger"
             onClick={async () => {

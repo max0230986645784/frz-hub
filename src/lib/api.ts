@@ -131,6 +131,12 @@ export function localUrl(target?: string | null): string | undefined {
   return `frz-file:///${encodeURI(target.replace(/\\/g, '/').replace(/^\/+/, ''))}`
 }
 
+/** Provider avatars are remote URLs, a chosen picture is a path on the disk. */
+export function avatarUrl(avatar?: string | null): string | undefined {
+  if (!avatar) return undefined
+  return /^https?:\/\//.test(avatar) ? avatar : localUrl(avatar)
+}
+
 export function bytes(value?: number | null): string {
   if (!value || value <= 0) return '0 o'
   const units = ['o', 'Ko', 'Mo', 'Go', 'To']

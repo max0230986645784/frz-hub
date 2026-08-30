@@ -80,6 +80,8 @@ const handlers = {
   'account:local': (profile) => account.loginLocal(profile),
   'account:discord': () => account.loginDiscord(),
   'account:logout': () => account.logout(),
+  'account:pickAvatar': () => account.pickAvatar(),
+  'account:setAvatar': (target) => account.setAvatar(target),
 
   'github:connected': () => github.connected(),
   'github:deviceStart': () => github.startDeviceLogin(),

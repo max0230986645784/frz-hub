@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import logo from './assets/logo.png'
-import { invoke, windowControls, type Account } from './lib/api'
+import { avatarUrl, invoke, windowControls, type Account } from './lib/api'
 import Dashboard from './views/Dashboard'
 import Launcher from './views/Launcher'
 import Assistant from './views/Assistant'
@@ -132,7 +132,7 @@ export default function App() {
           <button className="btn" onClick={() => go('ai')}>🧠 Velora AI</button>
           <button className="btn" onClick={() => go('settings')} title={account.name}>
             {account.avatar ? (
-              <img src={account.avatar} alt="" style={{ width: 20, height: 20, borderRadius: 99, verticalAlign: -4 }} />
+              <img src={avatarUrl(account.avatar)} alt="" style={{ width: 20, height: 20, borderRadius: 99, verticalAlign: -4 }} />
             ) : (
               '👤'
             )}{' '}

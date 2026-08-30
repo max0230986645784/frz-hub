@@ -1,7 +1,11 @@
 const http = require('node:http');
+const fs = require('node:fs');
+const path = require('node:path');
 const { createHash, randomBytes, randomUUID } = require('node:crypto');
-const { safeStorage, shell } = require('electron');
+const { app, dialog, safeStorage, shell } = require('electron');
 const store = require('../lib/store.cjs');
+
+const IMAGE_EXTENSIONS = ['png', 'jpg', 'jpeg', 'webp', 'gif'];
 
 const DISCORD_SCOPES = 'identify email guilds';
 const REDIRECT_PORT = 53682;
@@ -52,6 +56,32 @@ function loginLocal({ name, avatar }) {
   });
 }
 
+function avatarsRoot() {
+  const root = path.join(app.getPath('userData'), 'avatars');
+  fs.mkdirSync(root, { recursive: true });
+  return root;
+}
+
+/** Copies the picture next to the settings so it survives a move of the original file. */
+function setAvatar(source) {
+  const account = store.get('account');
+  if (!account) throw new Error('Connecte-toi avant de changer la photo.');
+  const extension = path.extname(source).replace('.', '').toLowerCase();
+  if (!IMAGE_EXTENSIONS.includes(extension)) throw new Error(`Format d'image non supporte : .${extension}`);
+  const target = path.join(avatarsRoot(), `${account.id}.${extension}`);
+  fs.copyFileSync(source, target);
+  return save({ ...account, avatar: target });
+}
+
+async function pickAvatar() {
+  const result = await dialog.showOpenDialog({
+    properties: ['openFile'],
+    filters: [{ name: 'Images', extensions: IMAGE_EXTENSIONS }],
+  });
+  if (result.canceled) return null;
+  return setAvatar(result.filePaths[0]);
+}
+
 function logout() {
   store.set('account', null);
   return null;
@@ -94,6 +124,18 @@ function waitForCode(expectedState, timeout = 180000) {
     server.on('error', reject);
     server.listen(REDIRECT_PORT, '127.0.0.1');
   });
+}
+
+/** Discord serves animated avatars as .gif, and falls back to a numbered default picture. */
+function discordAvatar(profile) {
+  if (profile.avatar) {
+    const extension = profile.avatar.startsWith('a_') ? 'gif' : 'png';
+    return `https://cdn.discordapp.com/avatars/${profile.id}/${profile.avatar}.${extension}?size=128`;
+  }
+  const index = profile.discriminator && profile.discriminator !== '0'
+    ? Number(profile.discriminator) % 5
+    : Number((BigInt(profile.id) >> 22n) % 6n);
+  return `https://cdn.discordapp.com/embed/avatars/${index}.png`;
 }
 
 async function loginDiscord() {
@@ -140,10 +182,22 @@ async function loginDiscord() {
     provider: 'discord',
     name: profile.global_name || profile.username,
     handle: profile.username,
-    avatar: profile.avatar ? `https://cdn.discordapp.com/avatars/${profile.id}/${profile.avatar}.png` : '',
+    avatar: discordAvatar(profile),
     token: protect(grant.access_token),
     createdAt: Date.now(),
   });
 }
 
-module.exports = { current, token, save, protect, reveal, loginLocal, loginDiscord, logout, REDIRECT_URI };
+module.exports = {
+  current,
+  token,
+  save,
+  protect,
+  reveal,
+  loginLocal,
+  loginDiscord,
+  logout,
+  setAvatar,
+  pickAvatar,
+  REDIRECT_URI,
+};
