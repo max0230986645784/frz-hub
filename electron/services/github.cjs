@@ -1,4 +1,5 @@
 const path = require('node:path');
+const qrcode = require('qrcode');
 const { app, shell } = require('electron');
 const store = require('../lib/store.cjs');
 const account = require('./account.cjs');
@@ -55,9 +56,12 @@ async function startDeviceLogin() {
   if (!response.ok) throw new Error(`GitHub a refuse la demande (${response.status}).`);
   const body = await response.json();
   await shell.openExternal(body.verification_uri);
+  // verification_uri_complete pre-fills the code, so scanning the QR is enough.
+  const target = body.verification_uri_complete ?? body.verification_uri;
   return {
     userCode: body.user_code,
     verificationUri: body.verification_uri,
+    qr: await qrcode.toDataURL(target, { margin: 1, width: 320, color: { dark: '#0b0b16', light: '#ffffff' } }),
     deviceCode: body.device_code,
     interval: body.interval ?? 5,
     expiresIn: body.expires_in ?? 900,

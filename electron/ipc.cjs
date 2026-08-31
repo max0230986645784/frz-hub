@@ -82,9 +82,17 @@ const handlers = {
   'account:current': () => account.current(),
   'account:local': (profile) => account.loginLocal(profile),
   'account:discord': () => account.loginDiscord(),
+  'discord:qrStart': () => account.discordQrStart(),
+  'discord:qrPoll': () => account.discordQrPoll(),
   'account:logout': () => account.logout(),
   'account:pickAvatar': () => account.pickAvatar(),
   'account:setAvatar': (target) => account.setAvatar(target),
+
+  'auth:providers': () => ({
+    github: Boolean(store.get('settings')?.githubClientId),
+    discord: Boolean(store.get('settings')?.discordClientId),
+    tiktok: tiktok.configured(),
+  }),
 
   'tiktok:configured': () => tiktok.configured(),
   'tiktok:configure': (payload) => tiktok.configure(payload),

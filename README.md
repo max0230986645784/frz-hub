@@ -41,7 +41,7 @@ npm run dist:win     # NSIS -> release/Velora-OS-Setup-<version>.exe
 | Tools | conversion video/audio/image, PDF, archives, nettoyage, mots de passe, notes |
 | Network | appareils du reseau local, ping, IP publique, test de debit |
 | GitHub | depots, activite, PR, notifications, clone |
-| Comptes | compte local, GitHub (device flow), Discord (OAuth PKCE), TikTok (QR code) |
+| Comptes | compte local, GitHub, Discord et TikTok en QR code (ou navigateur pour Discord) |
 
 Les tokens OAuth et les tokens de bots sont chiffres avec `safeStorage` quand la plateforme le permet.
 
@@ -51,6 +51,19 @@ Velora Studio ecrit le bot, `bots:install` installe ses dependances, puis Velora
 Node embarque d'Electron (`ELECTRON_RUN_AS_NODE`) : pas besoin d'installer Node sur le PC. Le token
 n'existe que chiffre sur le disque et n'est injecte que dans l'environnement du processus enfant.
 Les bots marques `autostart` demarrent avec Velora et sont tous arretes a la fermeture.
+
+## Connexion par QR code
+
+Les trois providers affichent un QR code sur l'ecran de connexion :
+
+- TikTok : Login Kit for Desktop (`get_qrcode` + `check_qrcode`), scan avec l'app TikTok.
+- GitHub : device flow, le QR encode `verification_uri_complete` (le code est pre-rempli).
+- Discord : le QR encode la page d'autorisation avec un `redirect_uri` pointant sur l'IP locale du
+  PC, donc le telephone approuve et la redirection revient sur Velora (meme Wi-Fi requis, et l'URI
+  affichee sous le QR doit etre ajoutee une fois dans les redirects de l'app Discord).
+
+Si les identifiants d'app manquent, le bouton ouvre un panneau de configuration (lien vers le
+portail + champs a coller) au lieu d'echouer avec un simple message.
 
 ## Connexion TikTok (QR code)
 

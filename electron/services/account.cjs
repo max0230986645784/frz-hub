@@ -1,6 +1,8 @@
 const http = require('node:http');
 const fs = require('node:fs');
+const os = require('node:os');
 const path = require('node:path');
+const qrcode = require('qrcode');
 const { createHash, randomBytes, randomUUID } = require('node:crypto');
 const { app, dialog, safeStorage, shell } = require('electron');
 const store = require('../lib/store.cjs');
@@ -10,6 +12,8 @@ const IMAGE_EXTENSIONS = ['png', 'jpg', 'jpeg', 'webp', 'gif'];
 const DISCORD_SCOPES = 'identify email guilds';
 const REDIRECT_PORT = 53682;
 const REDIRECT_URI = `http://127.0.0.1:${REDIRECT_PORT}/callback`;
+
+let discordQr = null;
 
 /** Tokens are encrypted with the OS keychain when Electron exposes it. */
 function protect(secret) {
@@ -95,7 +99,7 @@ function base64url(buffer) {
  * Waits for the OAuth redirect on a loopback server. Desktop apps are public
  * clients, so the exchange uses PKCE instead of a client secret.
  */
-function waitForCode(expectedState, timeout = 180000) {
+function waitForCode(expectedState, { host = '127.0.0.1', timeout = 180000 } = {}) {
   return new Promise((resolve, reject) => {
     const server = http.createServer((request, response) => {
       const url = new URL(request.url, REDIRECT_URI);
@@ -122,45 +126,33 @@ function waitForCode(expectedState, timeout = 180000) {
       reject(new Error('Delai de connexion depasse.'));
     }, timeout);
     server.on('error', reject);
-    server.listen(REDIRECT_PORT, '127.0.0.1');
+    server.listen(REDIRECT_PORT, host);
   });
 }
 
-/** Discord serves animated avatars as .gif, and falls back to a numbered default picture. */
-function discordAvatar(profile) {
-  if (profile.avatar) {
-    const extension = profile.avatar.startsWith('a_') ? 'gif' : 'png';
-    return `https://cdn.discordapp.com/avatars/${profile.id}/${profile.avatar}.${extension}?size=128`;
+/** LAN address of this PC, so a phone on the same Wi-Fi can hit the callback. */
+function lanAddress() {
+  for (const entries of Object.values(os.networkInterfaces())) {
+    for (const entry of entries ?? []) {
+      if (entry.family === 'IPv4' && !entry.internal) return entry.address;
+    }
   }
-  const index = profile.discriminator && profile.discriminator !== '0'
-    ? Number(profile.discriminator) % 5
-    : Number((BigInt(profile.id) >> 22n) % 6n);
-  return `https://cdn.discordapp.com/embed/avatars/${index}.png`;
+  return null;
 }
 
-async function loginDiscord() {
-  const clientId = store.get('settings')?.discordClientId;
-  if (!clientId) {
-    throw new Error(
-      "Ajoute d'abord ton Client ID Discord dans Reglages (portail Discord Developers > OAuth2, redirect http://127.0.0.1:53682/callback).",
-    );
-  }
-  const verifier = base64url(randomBytes(48));
-  const challenge = base64url(createHash('sha256').update(verifier).digest());
-  const state = base64url(randomBytes(16));
+function authorizeUrl({ clientId, challenge, state, redirectUri }) {
   const authorize = new URL('https://discord.com/oauth2/authorize');
   authorize.searchParams.set('client_id', clientId);
   authorize.searchParams.set('response_type', 'code');
-  authorize.searchParams.set('redirect_uri', REDIRECT_URI);
+  authorize.searchParams.set('redirect_uri', redirectUri);
   authorize.searchParams.set('scope', DISCORD_SCOPES);
   authorize.searchParams.set('code_challenge', challenge);
   authorize.searchParams.set('code_challenge_method', 'S256');
   authorize.searchParams.set('state', state);
+  return authorize.toString();
+}
 
-  const pending = waitForCode(state);
-  await shell.openExternal(authorize.toString());
-  const code = await pending;
-
+async function exchangeDiscord({ clientId, code, verifier, redirectUri }) {
   const response = await fetch('https://discord.com/api/oauth2/token', {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -168,7 +160,7 @@ async function loginDiscord() {
       client_id: clientId,
       grant_type: 'authorization_code',
       code,
-      redirect_uri: REDIRECT_URI,
+      redirect_uri: redirectUri,
       code_verifier: verifier,
     }),
   });
@@ -188,9 +180,83 @@ async function loginDiscord() {
   });
 }
 
+/** Discord serves animated avatars as .gif, and falls back to a numbered default picture. */
+function discordAvatar(profile) {
+  if (profile.avatar) {
+    const extension = profile.avatar.startsWith('a_') ? 'gif' : 'png';
+    return `https://cdn.discordapp.com/avatars/${profile.id}/${profile.avatar}.${extension}?size=128`;
+  }
+  const index = profile.discriminator && profile.discriminator !== '0'
+    ? Number(profile.discriminator) % 5
+    : Number((BigInt(profile.id) >> 22n) % 6n);
+  return `https://cdn.discordapp.com/embed/avatars/${index}.png`;
+}
+
+function discordClientId() {
+  const clientId = store.get('settings')?.discordClientId;
+  if (!clientId) {
+    throw new Error(
+      "Ajoute d'abord ton Client ID Discord dans Reglages (portail Discord Developers > OAuth2, redirect http://127.0.0.1:53682/callback).",
+    );
+  }
+  return clientId;
+}
+
+async function loginDiscord() {
+  const clientId = discordClientId();
+  const verifier = base64url(randomBytes(48));
+  const challenge = base64url(createHash('sha256').update(verifier).digest());
+  const state = base64url(randomBytes(16));
+  const url = authorizeUrl({ clientId, challenge, state, redirectUri: REDIRECT_URI });
+
+  const pending = waitForCode(state);
+  await shell.openExternal(url);
+  const code = await pending;
+  return exchangeDiscord({ clientId, code, verifier, redirectUri: REDIRECT_URI });
+}
+
+/**
+ * QR login: the phone opens Discord's consent page and is redirected to this
+ * PC over the LAN, so the callback lands here instead of on the phone.
+ */
+async function discordQrStart() {
+  const clientId = discordClientId();
+  const address = lanAddress();
+  if (!address) throw new Error("Aucune adresse reseau locale : connecte le PC au Wi-Fi pour utiliser le QR code.");
+
+  const redirectUri = `http://${address}:${REDIRECT_PORT}/callback`;
+  const verifier = base64url(randomBytes(48));
+  const challenge = base64url(createHash('sha256').update(verifier).digest());
+  const state = base64url(randomBytes(16));
+  const url = authorizeUrl({ clientId, challenge, state, redirectUri });
+
+  const pending = waitForCode(state, { host: '0.0.0.0', timeout: 300000 })
+    .then((code) => exchangeDiscord({ clientId, code, verifier, redirectUri }))
+    .then((account) => {
+      discordQr = { ...discordQr, account, status: 'confirmed' };
+      return account;
+    })
+    .catch((error) => {
+      discordQr = { ...discordQr, status: 'expired', error: error.message };
+      return null;
+    });
+
+  discordQr = { status: 'new', pending, redirectUri };
+  const image = await qrcode.toDataURL(url, { margin: 1, width: 320, color: { dark: '#0b0b16', light: '#ffffff' } });
+  return { status: 'new', image, url, redirectUri };
+}
+
+function discordQrPoll() {
+  if (!discordQr) throw new Error('Genere un QR code Discord avant de verifier.');
+  if (discordQr.status === 'expired') throw new Error(discordQr.error || 'QR code expire, regenere-le.');
+  return { status: discordQr.status, account: discordQr.account ?? null };
+}
+
 module.exports = {
   current,
   token,
+  discordQrStart,
+  discordQrPoll,
   save,
   protect,
   reveal,
