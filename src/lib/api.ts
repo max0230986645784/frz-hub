@@ -121,6 +121,29 @@ export function invoke<T = unknown>(channel: string, payload?: unknown): Promise
   return bridge.invoke<T>(channel, payload)
 }
 
+/** Subscribes to a main-process event, returns the unsubscribe function. */
+export function onEvent<T>(channel: string, listener: (payload: T) => void): () => void {
+  if (!bridge) return () => {}
+  return bridge.on(channel, (payload) => listener(payload as T))
+}
+
+export type Bot = {
+  id: string
+  name: string
+  directory: string
+  entry: string
+  runtime: 'node' | 'python'
+  autostart: boolean
+  restartOnCrash: boolean
+  hasToken: boolean
+  status: 'running' | 'stopped'
+  pid: number | null
+  startedAt: number | null
+  restarts: number
+}
+
+export type BotLog = { id: string; at: number; stream: 'out' | 'err'; line: string }
+
 export const platform = bridge?.platform ?? 'web'
 export const isDesktop = Boolean(bridge)
 export const windowControls = bridge?.window ?? { minimize: () => {}, maximize: () => {}, close: () => {} }

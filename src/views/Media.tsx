@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { invoke, bytes, localUrl } from '../lib/api'
+import Theater from '../components/Theater'
 import { useAsync } from '../lib/hooks'
 import type { Toast } from '../App'
 
@@ -106,17 +107,17 @@ export default function Media({ query, notify }: { query: string; notify: Toast 
         </div>
       )}
 
-      {playing && (
+      {playing && !playing.audio && (
+        <Theater title={playing.title} path={playing.path} onClose={() => setPlaying(null)} />
+      )}
+
+      {playing?.audio && (
         <div className="card" style={{ position: 'sticky', bottom: 0, marginTop: 18 }}>
           <div className="row">
             <b style={{ flex: 1 }}>{playing.title}</b>
             <button className="btn small" onClick={() => setPlaying(null)}>✕</button>
           </div>
-          {playing.audio ? (
-            <audio src={localUrl(playing.path)} controls autoPlay style={{ width: '100%', marginTop: 10 }} />
-          ) : (
-            <video src={localUrl(playing.path)} controls autoPlay style={{ width: '100%', marginTop: 10, borderRadius: 14 }} />
-          )}
+          <audio src={localUrl(playing.path)} controls autoPlay style={{ width: '100%', marginTop: 10 }} />
         </div>
       )}
     </div>

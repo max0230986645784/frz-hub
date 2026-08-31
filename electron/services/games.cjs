@@ -2,7 +2,7 @@ const fsp = require('node:fs/promises');
 const path = require('node:path');
 const { randomUUID } = require('node:crypto');
 const store = require('../lib/store.cjs');
-const { IS_WIN } = require('../lib/run.cjs');
+const { IS_WIN, powershellJson } = require('../lib/run.cjs');
 const apps = require('./apps.cjs');
 
 const running = new Map();
@@ -173,9 +173,70 @@ async function scanEpic() {
   return games;
 }
 
+/**
+ * Rockstar, Battle.net and the other Windows launchers all publish their
+ * install path under Uninstall, so one registry sweep covers them at once.
+ */
+async function scanRegistry() {
+  if (!IS_WIN) return [];
+  const known = [
+    { match: /rockstar games launcher/i, name: 'Rockstar Games Launcher', platform: 'rockstar' },
+    { match: /grand theft auto v/i, name: 'Grand Theft Auto V', platform: 'rockstar' },
+    { match: /red dead redemption/i, name: 'Red Dead Redemption 2', platform: 'rockstar' },
+    { match: /battle\.net/i, name: 'Battle.net', platform: 'battlenet' },
+    { match: /^ubisoft connect/i, name: 'Ubisoft Connect', platform: 'ubisoft' },
+    { match: /^ea (app|desktop)/i, name: 'EA App', platform: 'ea' },
+    { match: /^gog galaxy/i, name: 'GOG Galaxy', platform: 'gog' },
+    { match: /^riot client|^league of legends|^valorant/i, name: null, platform: 'riot' },
+  ];
+  const entries = await powershellJson(
+    "Get-ItemProperty 'HKLM:\\Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\*'," +
+      " 'HKLM:\\Software\\WOW6432Node\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\*'" +
+      ' | Where-Object { $_.DisplayName -and $_.DisplayIcon }' +
+      ' | Select-Object DisplayName, DisplayIcon, InstallLocation',
+  );
+  const games = [];
+  for (const entry of entries) {
+    const known_entry = known.find((candidate) => candidate.match.test(entry.DisplayName ?? ''));
+    if (!known_entry) continue;
+    const target = String(entry.DisplayIcon ?? '').split(',')[0].replace(/"/g, '').trim();
+    if (!target.toLowerCase().endsWith('.exe')) continue;
+    games.push({
+      name: known_entry.name ?? entry.DisplayName,
+      platform: known_entry.platform,
+      target,
+      icon: '🎮',
+    });
+  }
+  return games;
+}
+
+/** FiveM installs per user and is launched through its own FiveM.exe. */
+async function scanFiveM() {
+  if (!IS_WIN) return [];
+  const candidates = [
+    path.join(process.env.LOCALAPPDATA ?? '', 'FiveM', 'FiveM.exe'),
+    path.join(process.env.LOCALAPPDATA ?? '', 'FiveM', 'FiveM.app', 'FiveM.exe'),
+  ];
+  for (const target of candidates) {
+    try {
+      await fsp.access(target);
+      return [{ name: 'FiveM', platform: 'fivem', target, icon: '🚔' }];
+    } catch {
+      /* not installed here */
+    }
+  }
+  return [];
+}
+
 /** Scans every known store and adds the games missing from the library. */
 async function scan() {
-  const found = [...(await scanSteam()), ...(await scanEpic())];
+  const found = [
+    ...(await scanSteam()),
+    ...(await scanEpic()),
+    ...(await scanRegistry()),
+    ...(await scanFiveM()),
+  ];
   const existing = new Set(list().map((game) => game.name.toLowerCase()));
   const added = [];
   for (const game of found) {

@@ -7,6 +7,8 @@ import Assistant from './views/Assistant'
 import Games from './views/Games'
 import Media from './views/Media'
 import Studio from './views/Studio'
+import Bots from './views/Bots'
+import Editor from './views/Editor'
 import Tools from './views/Tools'
 import Network from './views/Network'
 import Github from './views/Github'
@@ -20,6 +22,8 @@ export type ViewId =
   | 'games'
   | 'media'
   | 'studio'
+  | 'bots'
+  | 'editor'
   | 'tools'
   | 'network'
   | 'github'
@@ -34,6 +38,8 @@ const NAV: NavEntry[] = [
   { id: 'games', icon: '🎮', title: 'Game Center', subtitle: 'Bibliotheque, temps de jeu, favoris' },
   { id: 'media', icon: '🎬', title: 'Media Center', subtitle: 'Films, series et musique locale' },
   { id: 'studio', icon: '🧩', title: 'Velora Studio', subtitle: "L'agence qui code tes projets" },
+  { id: 'bots', icon: '🤖', title: 'Bots', subtitle: 'Tes bots Discord, generes et heberges par Velora' },
+  { id: 'editor', icon: '✂️', title: 'Montage', subtitle: 'Couper, assembler, musique, export' },
   { id: 'tools', icon: '🛠️', title: 'Tools', subtitle: 'La boite a outils du PC' },
   { id: 'network', icon: '🌐', title: 'Network', subtitle: 'Ton reseau local en direct' },
   { id: 'github', icon: '🐙', title: 'GitHub', subtitle: 'Repos, activite, pull requests' },
@@ -147,6 +153,8 @@ export default function App() {
           {view === 'games' && <Games query={query} notify={notify} />}
           {view === 'media' && <Media query={query} notify={notify} />}
           {view === 'studio' && <Studio notify={notify} />}
+          {view === 'bots' && <Bots notify={notify} />}
+          {view === 'editor' && <Editor notify={notify} />}
           {view === 'tools' && <Tools notify={notify} />}
           {view === 'network' && <Network notify={notify} />}
           {view === 'github' && <Github notify={notify} />}

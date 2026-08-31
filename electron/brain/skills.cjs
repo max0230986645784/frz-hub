@@ -11,6 +11,7 @@ const media = require('../services/media.cjs');
 const weather = require('../services/weather.cjs');
 const github = require('../services/github.cjs');
 const studio = require('./studio.cjs');
+const bots = require('../services/bots.cjs');
 const { normalize, hasAny, countMatches, wordIn, similarity } = require('./nlp.cjs');
 const { bytes, duration, playtime, bullets } = require('./persona.cjs');
 
@@ -411,6 +412,63 @@ const skills = [
       return {
         say: bullets(list.slice(0, 8).map((repo) => `${repo.fullName}${repo.language ? ` (${repo.language})` : ''}`)),
         card: { type: 'github-repos', data: list },
+      };
+    },
+  },
+  {
+    id: 'bots',
+    label: 'Bots Discord (creer, heberger, piloter)',
+    examples: ['fais-moi un bot Discord de moderation', 'demarre le bot', 'les logs du bot'],
+    match: (text) => {
+      if (!hasAny(text, ['bot', 'bots'])) return 0;
+      if (hasAny(text, ['demarre', 'demarrer', 'lance', 'lancer', 'arrete', 'arreter', 'stop', 'redemarre', 'heberge', 'heberger', 'logs', 'log', 'en ligne'])) return 0.96;
+      if (hasAny(text, ['fais', 'cree', 'creer', 'genere', 'generer', 'code', 'coder', 'ecris'])) return 0.94;
+      if (hasAny(text, ['mes', 'liste', 'quels'])) return 0.8;
+      return 0.5;
+    },
+    async run({ clause, original }) {
+      const request = original || clause;
+      const list = bots.list();
+      const named = list.find((bot) => request.toLowerCase().includes(bot.name.toLowerCase()));
+
+      if (hasAny(clause, ['fais', 'cree', 'creer', 'genere', 'generer', 'code', 'coder', 'ecris', 'nouveau'])) {
+        const bot = await bots.create(request);
+        return {
+          say: [
+            `${bot.name} est code dans ${bot.directory}.`,
+            "Il me manque son token : colle-le dans Bots, j'installe les dependances et je l'heberge.",
+          ].join('\n'),
+          card: { type: 'bot', data: bot },
+          refresh: ['bots'],
+        };
+      }
+
+      const target = named ?? list[0];
+      if (!target) return { say: "Tu n'as pas encore de bot. Dis-moi \"fais-moi un bot Discord\" et je le code." };
+
+      if (hasAny(clause, ['arrete', 'arreter', 'stop', 'coupe'])) {
+        const bot = bots.stop(target.id);
+        return { say: `${bot.name} est arrete.`, card: { type: 'bot', data: bot }, refresh: ['bots'] };
+      }
+      if (hasAny(clause, ['redemarre', 'redemarrer', 'relance'])) {
+        const bot = await bots.restart(target.id);
+        return { say: `${bot.name} redemarre.`, card: { type: 'bot', data: bot }, refresh: ['bots'] };
+      }
+      if (hasAny(clause, ['logs', 'log'])) {
+        const lines = bots.logs(target.id).slice(-8).map((entry) => entry.line);
+        return {
+          say: lines.length ? bullets(lines) : `${target.name} n'a encore rien affiche.`,
+          card: { type: 'bot', data: target },
+        };
+      }
+      if (hasAny(clause, ['demarre', 'demarrer', 'lance', 'lancer', 'heberge', 'heberger', 'allume'])) {
+        if (!target.hasToken) return { say: `${target.name} n'a pas de token : colle-le dans Bots et je le demarre.` };
+        const bot = bots.start(target.id);
+        return { say: `${bot.name} tourne (PID ${bot.pid}), je te remonte ses logs dans Bots.`, card: { type: 'bot', data: bot }, refresh: ['bots'] };
+      }
+      return {
+        say: bullets(list.map((bot) => `${bot.name} — ${bot.status === 'running' ? 'en ligne' : 'arrete'}`)),
+        card: { type: 'bots', data: list },
       };
     },
   },

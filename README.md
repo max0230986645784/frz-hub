@@ -34,14 +34,23 @@ npm run dist:win     # NSIS -> release/Velora-OS-Setup-<version>.exe
 | Launcher | projets et programmes, ajout de `.exe`/`.bat`/`.py`, scan du PC |
 | Velora AI | comprehension du francais, actions locales, memoire, commandes apprises |
 | Velora Studio | generation de vrais projets sur le disque a partir de blueprints locaux |
-| Game Center | scan Steam/Epic, lancement, temps de jeu, favoris |
-| Media Center | films, series, musique, posters locaux, lecteur |
+| Bots | Velora IA code le bot Discord, l'heberge, le relance, montre ses logs |
+| Montage | timeline de clips, decoupe, concat, musique, export ffmpeg |
+| Game Center | scan Steam/Epic/Rockstar/FiveM/Battle.net, lancement, temps de jeu, favoris |
+| Media Center | films, series, musique, posters locaux, lecteur plein ecran avec reprise |
 | Tools | conversion video/audio/image, PDF, archives, nettoyage, mots de passe, notes |
 | Network | appareils du reseau local, ping, IP publique, test de debit |
 | GitHub | depots, activite, PR, notifications, clone |
 | Comptes | compte local, GitHub (device flow), Discord (OAuth PKCE), TikTok (QR code) |
 
-Les tokens OAuth sont chiffres avec `safeStorage` quand la plateforme le permet.
+Les tokens OAuth et les tokens de bots sont chiffres avec `safeStorage` quand la plateforme le permet.
+
+## Bots Discord heberges par Velora
+
+Velora Studio ecrit le bot, `bots:install` installe ses dependances, puis Velora le lance avec le
+Node embarque d'Electron (`ELECTRON_RUN_AS_NODE`) : pas besoin d'installer Node sur le PC. Le token
+n'existe que chiffre sur le disque et n'est injecte que dans l'environnement du processus enfant.
+Les bots marques `autostart` demarrent avec Velora et sont tous arretes a la fermeture.
 
 ## Connexion TikTok (QR code)
 

@@ -10,6 +10,8 @@ const weather = require('./services/weather.cjs');
 const account = require('./services/account.cjs');
 const github = require('./services/github.cjs');
 const tiktok = require('./services/tiktok.cjs');
+const bots = require('./services/bots.cjs');
+const editor = require('./services/editor.cjs');
 const studio = require('./brain/studio.cjs');
 const brain = require('./brain/index.cjs');
 
@@ -88,6 +90,24 @@ const handlers = {
   'tiktok:configure': (payload) => tiktok.configure(payload),
   'tiktok:start': () => tiktok.start(),
   'tiktok:poll': () => tiktok.poll(),
+
+  'bots:list': () => bots.list(),
+  'bots:create': (request) => bots.create(request),
+  'bots:adopt': (directory) => bots.adopt(directory),
+  'bots:install': (id) => bots.install(id),
+  'bots:start': (id) => bots.start(id),
+  'bots:stop': (id) => bots.stop(id),
+  'bots:restart': (id) => bots.restart(id),
+  'bots:logs': (id) => bots.logs(id),
+  'bots:token': ({ id, token }) => bots.setToken(id, token),
+  'bots:configure': ({ id, patch }) => bots.configure(id, patch),
+  'bots:remove': (id) => bots.remove(id),
+  'bots:open': (id) => bots.open(id),
+
+  'editor:pickClips': () => editor.pickClips(),
+  'editor:pickMusic': () => editor.pickMusic(),
+  'editor:render': (options) => editor.render(options),
+  'editor:cancel': () => editor.cancel(),
 
   'github:connected': () => github.connected(),
   'github:deviceStart': () => github.startDeviceLogin(),

@@ -2,6 +2,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const { app, BrowserWindow, ipcMain, net, protocol, shell } = require('electron');
 const { register } = require('./ipc.cjs');
+const bots = require('./services/bots.cjs');
 
 const DEV_SERVER_URL = process.env.VITE_DEV_SERVER_URL;
 const DIST = path.join(__dirname, '..', 'dist');
@@ -75,10 +76,13 @@ app.whenReady().then(() => {
   serveFiles();
   register();
   createWindow();
+  bots.bootAutostart();
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow();
   });
 });
+
+app.on('before-quit', () => bots.stopAll());
 
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') app.quit();

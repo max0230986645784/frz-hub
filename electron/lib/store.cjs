@@ -21,6 +21,7 @@ const DEFAULTS = {
   notes: [],
   mediaFolders: [],
   devices: [],
+  bots: [],
   learned: [],
   history: { launches: [] },
 };
