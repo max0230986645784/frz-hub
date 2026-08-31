@@ -101,7 +101,7 @@ export type StudioProject = {
 export type Account = {
   id: string
   name: string
-  provider: 'local' | 'discord' | 'github'
+  provider: 'local' | 'discord' | 'github' | 'tiktok'
   avatar: string | null
   email?: string | null
 }

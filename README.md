@@ -39,5 +39,16 @@ npm run dist:win     # NSIS -> release/Velora-OS-Setup-<version>.exe
 | Tools | conversion video/audio/image, PDF, archives, nettoyage, mots de passe, notes |
 | Network | appareils du reseau local, ping, IP publique, test de debit |
 | GitHub | depots, activite, PR, notifications, clone |
+| Comptes | compte local, GitHub (device flow), Discord (OAuth PKCE), TikTok (QR code) |
 
 Les tokens OAuth sont chiffres avec `safeStorage` quand la plateforme le permet.
+
+## Connexion TikTok (QR code)
+
+Velora utilise le Login Kit for Desktop de TikTok (`get_qrcode` + `check_qrcode`) : le QR s'affiche
+dans l'ecran de connexion, tu le scannes avec l'app TikTok et tu approuves, puis la photo TikTok
+devient l'avatar du compte.
+
+Prerequis : creer une app sur developers.tiktok.com avec le produit Login Kit (scopes
+`user.info.basic`, `user.info.profile`), puis coller le Client Key et le Client Secret dans
+Reglages > Integrations. Le secret est stocke chiffre et n'est jamais renvoye au renderer.

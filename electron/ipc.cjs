@@ -9,6 +9,7 @@ const media = require('./services/media.cjs');
 const weather = require('./services/weather.cjs');
 const account = require('./services/account.cjs');
 const github = require('./services/github.cjs');
+const tiktok = require('./services/tiktok.cjs');
 const studio = require('./brain/studio.cjs');
 const brain = require('./brain/index.cjs');
 
@@ -82,6 +83,11 @@ const handlers = {
   'account:logout': () => account.logout(),
   'account:pickAvatar': () => account.pickAvatar(),
   'account:setAvatar': (target) => account.setAvatar(target),
+
+  'tiktok:configured': () => tiktok.configured(),
+  'tiktok:configure': (payload) => tiktok.configure(payload),
+  'tiktok:start': () => tiktok.start(),
+  'tiktok:poll': () => tiktok.poll(),
 
   'github:connected': () => github.connected(),
   'github:deviceStart': () => github.startDeviceLogin(),

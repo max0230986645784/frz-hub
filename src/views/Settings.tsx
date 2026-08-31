@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import BrandIcon from '../components/BrandIcon'
 import { avatarUrl, invoke, type Account } from '../lib/api'
 import { useAsync } from '../lib/hooks'
 import type { Toast } from '../App'
@@ -7,6 +8,7 @@ type Settings = {
   userName: string
   githubClientId?: string
   discordClientId?: string
+  tiktokClientKey?: string
   studioPath?: string
   weather: { city: string; latitude: number; longitude: number }
 }
@@ -29,6 +31,7 @@ export default function Settings({
   const [city, setCity] = useState('')
   const [cities, setCities] = useState<City[]>([])
   const [token, setToken] = useState('')
+  const [tiktokSecret, setTiktokSecret] = useState('')
 
   useEffect(() => {
     if (stored.data) setDraft(stored.data)
@@ -59,7 +62,12 @@ export default function Settings({
           )}
           <div style={{ flex: 1 }}>
             <b>{account.name}</b>
-            <div className="muted" style={{ fontSize: 12 }}>connecte via {account.provider}</div>
+            <div className="muted" style={{ fontSize: 12, display: 'flex', gap: 6, alignItems: 'center' }}>
+              {(account.provider === 'github' || account.provider === 'discord' || account.provider === 'tiktok') && (
+                <BrandIcon brand={account.provider} size={13} />
+              )}
+              connecte via {account.provider}
+            </div>
           </div>
           <button
             className="btn small"
@@ -90,14 +98,18 @@ export default function Settings({
 
       <section className="card">
         <h3>Integrations</h3>
-        <label className="muted" style={{ fontSize: 12 }}>Client ID GitHub (OAuth App, device flow active)</label>
+        <label className="muted" style={{ fontSize: 12, display: 'flex', gap: 6, alignItems: 'center' }}>
+          <BrandIcon brand="github" size={13} /> Client ID GitHub (OAuth App, device flow active)
+        </label>
         <input
           className="field"
           value={draft?.githubClientId ?? ''}
           onChange={(event) => patch({ githubClientId: event.target.value })}
           placeholder="Iv1.xxxxxxxxxxxx"
         />
-        <label className="muted" style={{ fontSize: 12, marginTop: 10, display: 'block' }}>Client ID Discord</label>
+        <label className="muted" style={{ fontSize: 12, marginTop: 10, display: 'flex', gap: 6, alignItems: 'center' }}>
+          <BrandIcon brand="discord" size={13} /> Client ID Discord
+        </label>
         <input
           className="field"
           value={draft?.discordClientId ?? ''}
@@ -121,6 +133,43 @@ export default function Settings({
             }}
           >
             Connecter
+          </button>
+        </div>
+
+        <label className="muted" style={{ fontSize: 12, marginTop: 10, display: 'flex', gap: 6, alignItems: 'center' }}>
+          <BrandIcon brand="tiktok" size={13} /> Client Key TikTok (Login Kit, QR code)
+        </label>
+        <input
+          className="field"
+          value={draft?.tiktokClientKey ?? ''}
+          onChange={(event) => patch({ tiktokClientKey: event.target.value })}
+          placeholder="aw..."
+        />
+        <label className="muted" style={{ fontSize: 12, marginTop: 10, display: 'block' }}>Client Secret TikTok</label>
+        <div className="row">
+          <input
+            className="field"
+            type="password"
+            value={tiktokSecret}
+            onChange={(event) => setTiktokSecret(event.target.value)}
+            placeholder="stocke chiffre, jamais renvoye"
+          />
+          <button
+            className="btn"
+            onClick={async () => {
+              try {
+                await invoke('tiktok:configure', {
+                  clientKey: draft?.tiktokClientKey ?? '',
+                  clientSecret: tiktokSecret,
+                })
+                setTiktokSecret('')
+                notify('TikTok configure : le QR code est dispo sur l\u2019ecran de connexion.')
+              } catch (error) {
+                notify(error instanceof Error ? error.message : String(error))
+              }
+            }}
+          >
+            Enregistrer
           </button>
         </div>
       </section>
