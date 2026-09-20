@@ -29,6 +29,8 @@ export async function GET(request: Request) {
     fetch("https://discord.com/api/users/@me", { headers }).then((r) => r.json()),
     fetch("https://discord.com/api/users/@me/guilds", { headers }).then((r) => r.json()),
   ]);
+  if (typeof user?.id !== "string" || !/^\d{15,25}$/.test(user.id) || !Array.isArray(guilds))
+    return NextResponse.redirect(new URL("/dashboard?error=oauth", request.url));
   if (!isDashboardOwner(user.id))
     return NextResponse.redirect(new URL("/?error=forbidden", request.url));
   await setSession({
