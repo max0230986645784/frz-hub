@@ -1,5 +1,6 @@
-import { ChannelType, SlashCommandBuilder } from "discord.js";
+import { ChannelType, PermissionFlagsBits, SlashCommandBuilder } from "discord.js";
 import { admin, getGuild, saveGuild, success } from "./_helpers.js";
+import { ensurePresetRoles } from "../utils/presets.js";
 export const data = admin(
   new SlashCommandBuilder()
     .setName("setup")
@@ -41,11 +42,50 @@ export async function execute(i) {
           parent: category.id,
         });
   }
+  const roles = await ensurePresetRoles(i.guild);
+  const founder = roles["👑 Fondateur"];
+  const moderator = roles["🛡️ Modérateur"];
+  const vip = roles["💎 VIP"];
+  const streamer = roles["🎥 Streamer"];
+  let boostCategory = i.guild.channels.cache.find(
+    (c) => c.type === ChannelType.GuildCategory && c.name === "🔒 Boost (VIP)",
+  );
+  if (!boostCategory)
+    boostCategory = await i.guild.channels.create({
+      name: "🔒 Boost (VIP)",
+      type: ChannelType.GuildCategory,
+      permissionOverwrites: [
+        { id: i.guild.id, deny: [PermissionFlagsBits.ViewChannel] },
+        { id: streamer.id, deny: [PermissionFlagsBits.ViewChannel] },
+        { id: vip.id, allow: [PermissionFlagsBits.ViewChannel] },
+        { id: moderator.id, allow: [PermissionFlagsBits.ViewChannel] },
+        { id: founder.id, allow: [PermissionFlagsBits.ViewChannel] },
+      ],
+    });
+  for (const name of ["💎-vip-chat", "🎁-avantages-boost", "🔊 VIP"])
+    if (!i.guild.channels.cache.find((c) => c.name === name && c.parentId === boostCategory.id))
+      await i.guild.channels.create({
+        name,
+        type: name === "🔊 VIP" ? ChannelType.GuildVoice : ChannelType.GuildText,
+        parent: boostCategory.id,
+      });
+  let boostChannel = i.guild.channels.cache.find((c) => c.name === "🚀-boosts");
+  if (!boostChannel)
+    boostChannel = await i.guild.channels.create({
+      name: "🚀-boosts",
+      type: ChannelType.GuildText,
+      permissionOverwrites: [
+        { id: i.guild.id, deny: [PermissionFlagsBits.SendMessages] },
+        { id: i.client.user.id, allow: [PermissionFlagsBits.SendMessages] },
+      ],
+    });
   const cfg = await getGuild(i.guildId);
   const log = i.guild.channels.cache.find((c) => c.name === "logs");
   const generator = i.guild.channels.cache.find((c) => c.name === "generateur-vocal");
   cfg.logs.channel = log?.id;
   cfg.tempVoice = { generator: generator?.id, category: generator?.parentId };
+  cfg.autorole = { enabled: true, roles: [streamer.id] };
+  cfg.boost = { enabled: true, vipRole: vip.id, channel: boostChannel.id };
   await saveGuild(i.guildId, cfg);
   return i.reply({
     embeds: [

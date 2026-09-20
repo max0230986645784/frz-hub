@@ -1,5 +1,6 @@
 import { SlashCommandBuilder, EmbedBuilder } from "discord.js";
 import { admin, getGuild, saveGuild, success } from "./_helpers.js";
+import { levelForXp } from "../utils/levels.js";
 export const data = new SlashCommandBuilder()
   .setName("niveaux")
   .setDescription("Configurer les niveaux et l'XP")
@@ -49,6 +50,7 @@ export async function execute(i) {
         0,
         cfg.xp[id].xp + (sub === "add" ? i.options.getInteger("xp") : -i.options.getInteger("xp")),
       );
+      cfg.xp[id].level = levelForXp(cfg.xp[id].xp);
     }
   }
   await saveGuild(i.guildId, cfg);

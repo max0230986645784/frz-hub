@@ -1,10 +1,15 @@
 import { NextResponse } from "next/server";
 import { botFetch } from "../../../../../lib/bot-api";
-export async function GET(_: Request, { params }: { params: { id: string } }) {
+import { requireGuildAccess } from "../../../../../lib/auth";
+export async function GET(request: Request, { params }: { params: { id: string } }) {
+  const access = await requireGuildAccess(request, params.id);
+  if ("response" in access) return access.response;
   const data = await (await botFetch(`/guilds/${params.id}`)).json();
   return NextResponse.json(data.channels ?? [], { status: 200 });
 }
 export async function POST(request: Request, { params }: { params: { id: string } }) {
+  const access = await requireGuildAccess(request, params.id);
+  if ("response" in access) return access.response;
   const response = await botFetch(`/guilds/${params.id}/channels`, {
     method: "POST",
     body: await request.text(),

@@ -4,6 +4,7 @@ import {
   Collection,
   EmbedBuilder,
   GatewayIntentBits,
+  MessageType,
   Partials,
   PermissionFlagsBits,
 } from "discord.js";
@@ -17,6 +18,7 @@ import { logEvent } from "./utils/logger.js";
 import { startTwitchPoller } from "./utils/twitch.js";
 import { pollPresentation, rescheduleTimers } from "./timers.js";
 import { addWarning } from "./utils/warnings.js";
+import { levelForXp } from "./utils/levels.js";
 
 export async function loadCommands() {
   const dir = join(fileURLToPath(new URL(".", import.meta.url)), "commands");
@@ -177,6 +179,13 @@ export async function createClient() {
     }),
   );
   interactionHandlers.set("ticket:close:confirm", closeTicket);
+  interactionHandlers.set("categorie:delete", async (interaction) => {
+    const category = interaction.guild.channels.cache.get(interaction.customId.split(":")[2]);
+    if (!category || category.type !== 4)
+      return interaction.update({ content: "Catégorie introuvable.", components: [] });
+    await category.delete().catch(() => {});
+    return interaction.update({ content: "Catégorie supprimée.", components: [] });
+  });
   interactionHandlers.set("giveaway:join", async (interaction) => {
     const id = interaction.customId.split(":")[2];
     const cfg = await getGuild(interaction.guildId);
@@ -317,8 +326,30 @@ export async function createClient() {
     }
   });
   client.on("messageCreate", async (message) => {
-    if (message.author.bot || !message.guild) return;
+    if (!message.guild) return;
     const cfg = await getGuild(message.guild.id);
+    if (
+      [
+        MessageType.GuildBoost,
+        MessageType.GuildBoostTier1,
+        MessageType.GuildBoostTier2,
+        MessageType.GuildBoostTier3,
+      ].includes(message.type)
+    ) {
+      const channel = cfg.boost?.channel && message.guild.channels.cache.get(cfg.boost.channel);
+      if (cfg.boost?.enabled && channel?.isTextBased())
+        await channel
+          .send({
+            embeds: [
+              new EmbedBuilder()
+                .setColor(0xec4899)
+                .setDescription(`🚀 ${message.author} a boosté le serveur ! Merci 💎`),
+            ],
+          })
+          .catch(() => {});
+      return;
+    }
+    if (message.author.bot) return;
     const auto = cfg.automod ?? {};
     if (
       auto.ignoredChannels?.includes(message.channel.id) ||
@@ -392,7 +423,7 @@ export async function createClient() {
         const previousLevel = value.level;
         value.xp += (15 + Math.floor(Math.random() * 11)) * (cfg.levels.multiplier ?? 1);
         value.last = Date.now();
-        while (value.xp >= 5 * value.level ** 2 + 50 * value.level + 100) value.level++;
+        value.level = levelForXp(value.xp);
         cfg.xp[message.author.id] = value;
         await saveGuild(message.guild.id, cfg);
         if (value.level > previousLevel) {
@@ -467,9 +498,21 @@ export async function createClient() {
         )
         .catch(() => {});
   });
-  client.on("guildMemberRemove", (member) =>
-    logEvent(member.guild, "départ", `${member.user.tag} a quitté le serveur`),
-  );
+  client.on("guildMemberRemove", async (member) => {
+    const cfg = await getGuild(member.guild.id);
+    await logEvent(member.guild, "départ", `${member.user.tag} a quitté le serveur`);
+    if (cfg.goodbye?.enabled && cfg.goodbye.channel)
+      await member.guild.channels.cache
+        .get(cfg.goodbye.channel)
+        ?.send(
+          (cfg.goodbye.message ?? "{username} nous quitte. À bientôt !")
+            .replaceAll("{user}", `${member}`)
+            .replaceAll("{username}", member.user.username)
+            .replaceAll("{server}", member.guild.name)
+            .replaceAll("{membercount}", String(member.guild.memberCount)),
+        )
+        .catch(() => {});
+  });
   client.on("guildBanAdd", (ban) => logEvent(ban.guild, "ban", `${ban.user.tag} a été banni`));
   client.on("guildBanRemove", (ban) =>
     logEvent(ban.guild, "unban", `${ban.user.tag} a été débanni`),
@@ -510,7 +553,7 @@ export async function createClient() {
         { avant: before.content || "—", après: after.content || "—" },
       ),
   );
-  client.on("guildMemberUpdate", (before, after) => {
+  client.on("guildMemberUpdate", async (before, after) => {
     if (before.nickname !== after.nickname)
       logEvent(
         after.guild,
@@ -519,6 +562,25 @@ export async function createClient() {
       );
     if (before.roles.cache.size !== after.roles.cache.size)
       logEvent(after.guild, "rôles", `Rôles modifiés pour ${after.user.tag}`);
+    const cfg = await getGuild(after.guild.id);
+    if (cfg.boost?.enabled && cfg.boost.vipRole) {
+      const channel = cfg.boost.channel && after.guild.channels.cache.get(cfg.boost.channel);
+      if (!before.premiumSince && after.premiumSince) {
+        await after.roles.add(cfg.boost.vipRole).catch(() => {});
+        if (channel?.isTextBased())
+          await channel
+            .send({
+              embeds: [
+                new EmbedBuilder()
+                  .setColor(0xec4899)
+                  .setDescription(`🚀 ${after} a boosté le serveur ! Merci 💎`),
+              ],
+            })
+            .catch(() => {});
+      } else if (before.premiumSince && !after.premiumSince) {
+        await after.roles.remove(cfg.boost.vipRole).catch(() => {});
+      }
+    }
   });
   client.on("voiceStateUpdate", (before, after) => {
     if (before.channelId !== after.channelId)

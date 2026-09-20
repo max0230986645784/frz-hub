@@ -1,8 +1,14 @@
 import { NextResponse } from "next/server";
+import { cookies } from "next/headers";
 import { setSession } from "../../../../lib/session";
 export async function GET(request: Request) {
-  const code = new URL(request.url).searchParams.get("code");
-  if (!code) return NextResponse.redirect(new URL("/dashboard?error=oauth", request.url));
+  const params = new URL(request.url).searchParams;
+  const code = params.get("code");
+  const state = params.get("state");
+  const expectedState = cookies().get("mr_robot_oauth_state")?.value;
+  cookies().set("mr_robot_oauth_state", "", { expires: new Date(0), path: "/" });
+  if (!code || !state || !expectedState || state !== expectedState)
+    return NextResponse.redirect(new URL("/dashboard?error=oauth", request.url));
   const body = new URLSearchParams({
     client_id: process.env.NEXT_PUBLIC_DISCORD_CLIENT_ID ?? "",
     client_secret: process.env.DISCORD_CLIENT_SECRET ?? "",

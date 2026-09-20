@@ -65,17 +65,20 @@ export async function execute(i) {
   }
   if (sub === "config") {
     const cfg = await getGuild(i.guildId);
-    const rows = ["welcome", "levels", "automod", "logs", "antiRaid"].map((key) =>
+    const buttons = ["welcome", "levels", "automod", "logs", "antiRaid", "boost"].map((key) =>
       new ButtonBuilder()
         .setCustomId(`config:toggle:${key}`)
         .setLabel(`${key} : ${cfg[key]?.enabled ? "activé" : "désactivé"}`)
         .setStyle(ButtonStyle.Secondary),
     );
+    const rows = [];
+    for (let index = 0; index < buttons.length; index += 5)
+      rows.push(new ActionRowBuilder().addComponents(buttons.slice(index, index + 5)));
     return i.reply({
       embeds: [
         e("Configuration Mr. Robot", "Cliquez sur un bouton pour activer ou désactiver un module."),
       ],
-      components: [new ActionRowBuilder().addComponents(rows)],
+      components: rows,
     });
   }
   if (sub === "installation")

@@ -36,29 +36,35 @@ export function scheduleReminder(client, guildId, id, reminder) {
   });
 }
 export function scheduleGiveaway(client, guildId, id, giveaway) {
-  later(`giveaway:${guildId}:${id}`, giveaway.endsAt, async () => {
-    const guild = client.guilds.cache.get(guildId);
-    const channel = guild?.channels.cache.get(giveaway.channel);
-    const message = await channel?.messages.fetch(giveaway.message).catch(() => null);
-    const participants = giveaway.participants ?? [];
-    const winners = [...participants].sort(() => Math.random() - 0.5).slice(0, giveaway.winners);
-    if (message)
-      await message
-        .edit({
-          embeds: [
-            new EmbedBuilder()
-              .setTitle("🎉 Giveaway terminé")
-              .setDescription(
-                `Prix : **${giveaway.prize}**\nGagnant(s) : ${winners.map((x) => `<@${x}>`).join(", ") || "Aucun participant."}`,
-              ),
-          ],
-          components: [],
-        })
-        .catch(() => {});
-    const cfg = await getGuild(guildId);
+  later(`giveaway:${guildId}:${id}`, giveaway.endsAt, () => finishGiveaway(client, guildId, id));
+}
+export async function finishGiveaway(client, guildId, id, { reroll = false } = {}) {
+  const cfg = await getGuild(guildId);
+  const giveaway = cfg.giveaways?.[id];
+  if (!giveaway) return null;
+  const guild = client.guilds.cache.get(guildId);
+  const channel = guild?.channels.cache.get(giveaway.channel);
+  const message = await channel?.messages.fetch(giveaway.message).catch(() => null);
+  const participants = giveaway.participants ?? [];
+  const winners = [...participants].sort(() => Math.random() - 0.5).slice(0, giveaway.winners);
+  if (message)
+    await message
+      .edit({
+        embeds: [
+          new EmbedBuilder()
+            .setTitle(reroll ? "🎉 Nouveau tirage" : "🎉 Giveaway terminé")
+            .setDescription(
+              `Prix : **${giveaway.prize}**\nGagnant(s) : ${winners.map((x) => `<@${x}>`).join(", ") || "Aucun participant."}`,
+            ),
+        ],
+        components: reroll ? message.components : [],
+      })
+      .catch(() => {});
+  if (!reroll) {
     delete cfg.giveaways[id];
     await saveGuild(guildId, cfg);
-  });
+  }
+  return { giveaway, winners };
 }
 export function schedulePoll(client, guildId, id, poll) {
   later(`poll:${guildId}:${id}`, poll.endsAt, async () => {

@@ -1,10 +1,11 @@
 import Link from "next/link";
 import { getSession } from "../../../lib/session";
+import { canManageGuild } from "../../../lib/auth";
 import { botJson } from "../../../lib/bot-api";
 import GuildManager from "./GuildManager";
 export default async function GuildDashboard({ params }: { params: { guildId: string } }) {
   const session = await getSession();
-  if (!session || !session.guilds.some((guild) => guild.id === params.guildId))
+  if (!session || !canManageGuild(session, params.guildId))
     return (
       <main className="mx-auto max-w-xl px-6 py-24 text-center">
         <h1 className="text-3xl font-bold">Accès refusé</h1>

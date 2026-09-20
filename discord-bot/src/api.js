@@ -45,6 +45,8 @@ export function startApi(client) {
     if (!botClient.guilds.cache.has(req.params.id))
       return res.status(404).json({ error: "Serveur introuvable" });
     const current = await getGuild(req.params.id);
+    if (!req.body || typeof req.body !== "object" || Array.isArray(req.body))
+      return res.status(400).json({ error: "Configuration invalide" });
     const allowed = [
       "tickets",
       "welcome",
@@ -58,12 +60,23 @@ export function startApi(client) {
       "antiRaid",
       "roleKeywords",
       "suggestions",
+      "boost",
     ];
-    const patch = Object.fromEntries(
-      Object.entries(req.body ?? {}).filter(
-        ([key]) => allowed.includes(key) && typeof req.body[key] === "object",
-      ),
-    );
+    const patch = {};
+    for (const [key, value] of Object.entries(req.body ?? {})) {
+      if (!allowed.includes(key)) continue;
+      if (value === null || typeof value !== "object")
+        return res.status(400).json({ error: `Configuration invalide : ${key}` });
+      const currentValue = current[key];
+      patch[key] =
+        !Array.isArray(value) &&
+        value &&
+        typeof currentValue === "object" &&
+        currentValue &&
+        !Array.isArray(currentValue)
+          ? { ...currentValue, ...value }
+          : value;
+    }
     res.json(await saveGuild(req.params.id, { ...current, ...patch }));
   });
   app.get("/guilds/:id/stats", async (req, res) => {

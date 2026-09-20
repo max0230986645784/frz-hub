@@ -40,7 +40,7 @@ const defaults = {
     message: "{username} nous quitte. À bientôt !",
     embed: true,
   },
-  autorole: { roles: [] },
+  autorole: { enabled: false, roles: [] },
   warns: {},
   xp: {},
   economy: {},
@@ -53,6 +53,7 @@ const defaults = {
   roleKeywords: [],
   antiRaid: { enabled: false, threshold: 10, window: 10, lockdown: false },
   tempVoice: { generator: null, category: null },
+  boost: { enabled: false, vipRole: null, channel: null },
 };
 function fresh() {
   return structuredClone(defaults);

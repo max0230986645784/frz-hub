@@ -6,6 +6,7 @@ import {
   SlashCommandBuilder,
 } from "discord.js";
 import { admin, getGuild, saveGuild, success } from "./_helpers.js";
+import { finishGiveaway, scheduleGiveaway, schedulePoll } from "../timers.js";
 export const data = new SlashCommandBuilder()
   .setName("communaute")
   .setDescription("Outils communautaires")
@@ -66,15 +67,13 @@ export async function execute(i) {
     const cfg = await getGuild(i.guildId);
     const giveaway = cfg.giveaways?.[i.options.getString("id")];
     if (!giveaway) return i.reply({ content: "Giveaway introuvable.", ephemeral: true });
-    const winners = [...(giveaway.participants ?? [])]
-      .sort(() => Math.random() - 0.5)
-      .slice(0, giveaway.winners);
-    if (sub === "giveaway-reroll")
-      return i.reply(`Nouveau gagnant : ${winners[0] ? `<@${winners[0]}>` : "aucun"}`);
-    delete cfg.giveaways[i.options.getString("id")];
-    await saveGuild(i.guildId, cfg);
+    const result = await finishGiveaway(i.client, i.guildId, i.options.getString("id"), {
+      reroll: sub === "giveaway-reroll",
+    });
     return i.reply(
-      `Giveaway terminé. Gagnants : ${winners.map((x) => `<@${x}>`).join(", ") || "aucun"}`,
+      sub === "giveaway-reroll"
+        ? `Nouveau gagnant : ${result?.winners[0] ? `<@${result.winners[0]}>` : "aucun"}`
+        : `Giveaway terminé. Gagnants : ${result?.winners.map((x) => `<@${x}>`).join(", ") || "aucun"}`,
     );
   }
   if (sub === "say") {
@@ -96,14 +95,18 @@ export async function execute(i) {
       votes: {},
       endsAt: Date.now() + 7 * 86_400_000,
     };
-    const row = new ActionRowBuilder().addComponents(
-      options.map((_, n) =>
-        new ButtonBuilder()
-          .setCustomId(`poll:vote:${id}:${n}`)
-          .setLabel(`${n + 1}`)
-          .setStyle(ButtonStyle.Primary),
-      ),
-    );
+    const rows = [];
+    for (let index = 0; index < options.length; index += 5)
+      rows.push(
+        new ActionRowBuilder().addComponents(
+          options.slice(index, index + 5).map((_, n) =>
+            new ButtonBuilder()
+              .setCustomId(`poll:vote:${id}:${index + n}`)
+              .setLabel(`${index + n + 1}`)
+              .setStyle(ButtonStyle.Primary),
+          ),
+        ),
+      );
     const response = await i.reply({
       fetchReply: true,
       embeds: [
@@ -113,10 +116,11 @@ export async function execute(i) {
             `**${i.options.getString("question")}**\n${options.map((x, n) => `${n + 1}. ${x}`).join("\n")}`,
           ),
       ],
-      components: [row],
+      components: rows,
     });
     cfg.polls[id].message = response.id;
     await saveGuild(i.guildId, cfg);
+    schedulePoll(i.client, i.guildId, id, cfg.polls[id]);
     return;
   }
   if (sub === "suggestion") {
@@ -188,6 +192,7 @@ export async function execute(i) {
     giveaway.message = response.id;
     cfg.giveaways[id] = giveaway;
     await saveGuild(i.guildId, cfg);
+    scheduleGiveaway(i.client, i.guildId, id, giveaway);
     return;
   }
   return i.reply({

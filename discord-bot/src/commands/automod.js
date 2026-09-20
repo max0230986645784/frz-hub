@@ -40,7 +40,22 @@ export const data = admin(
         .setName("sanctions")
         .setDescription("Configurer les seuils de sanctions")
         .addIntegerOption((o) =>
-          o.setName("avertissements").setDescription("Seuil").setRequired(true),
+          o.setName("avertissements").setDescription("Seuil").setRequired(true).setMinValue(1),
+        )
+        .addStringOption((o) =>
+          o
+            .setName("action")
+            .setDescription("Action")
+            .setRequired(true)
+            .addChoices(
+              { name: "Mute", value: "mute" },
+              { name: "Kick", value: "kick" },
+              { name: "Ban", value: "ban" },
+              { name: "Aucune", value: "aucune" },
+            ),
+        )
+        .addIntegerOption((o) =>
+          o.setName("duree-minutes").setDescription("Durée du mute en minutes").setMinValue(1),
         ),
     ),
 );
@@ -54,12 +69,37 @@ export async function execute(i) {
     cfg.automod.forbiddenWords = cfg.automod.forbiddenWords.filter(
       (x) => x !== i.options.getString("mot").toLowerCase(),
     );
+  if (sub === "sanctions") {
+    const threshold = i.options.getInteger("avertissements");
+    const action = i.options.getString("action");
+    cfg.automod.sanctions ??= {};
+    cfg.automod.sanctionDurations ??= {};
+    if (action === "aucune") {
+      delete cfg.automod.sanctions[threshold];
+      delete cfg.automod.sanctionDurations[threshold];
+    } else {
+      cfg.automod.sanctions[threshold] = action;
+      const duration = i.options.getInteger("duree-minutes");
+      if (action === "mute" && duration) cfg.automod.sanctionDurations[threshold] = duration;
+      else delete cfg.automod.sanctionDurations[threshold];
+    }
+  }
   await saveGuild(i.guildId, cfg);
   return i.reply({
     content:
       sub === "mots"
         ? cfg.automod.forbiddenWords.join(", ") || "Aucun mot."
-        : "Configuration automod enregistrée.",
+        : sub === "sanctions"
+          ? `Seuils : ${
+              Object.entries(cfg.automod.sanctions ?? {})
+                .sort(([a], [b]) => Number(a) - Number(b))
+                .map(([threshold, action]) => {
+                  const duration = cfg.automod.sanctionDurations?.[threshold];
+                  return `${threshold} avertissement(s) → ${action}${duration ? ` (${duration} min)` : ""}`;
+                })
+                .join(", ") || "Aucun seuil."
+            }`
+          : "Configuration automod enregistrée.",
     ephemeral: true,
   });
 }

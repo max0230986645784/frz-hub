@@ -1,6 +1,7 @@
 import { SlashCommandBuilder } from "discord.js";
 import { admin, success } from "./_helpers.js";
 import { getGuild, saveGuild } from "../store.js";
+import { ensurePresetRoles } from "../utils/presets.js";
 export const data = admin(
   new SlashCommandBuilder()
     .setName("role")
@@ -110,20 +111,7 @@ export async function execute(i) {
         .map((r) => `${r} (${r.members.size})`)
         .join("\n") || "Aucun rôle.",
     );
-  const presets = [
-    ["Fondateur", "#ef4444"],
-    ["Co-Fondateur", "#f97316"],
-    ["Administrateur", "#eab308"],
-    ["Modérateur", "#22c55e"],
-    ["Support", "#06b6d4"],
-    ["Streamer", "#9146ff"],
-    ["VIP", "#ec4899"],
-    ["Booster", "#f472b6"],
-    ["Membre", "#94a3b8"],
-  ];
-  for (const [name, color] of presets)
-    if (!i.guild.roles.cache.find((r) => r.name === name))
-      await i.guild.roles.create({ name, color });
+  await ensurePresetRoles(i.guild);
   return i.reply({
     embeds: [success("Rôles standards créés (les rôles existants ont été conservés).")],
   });

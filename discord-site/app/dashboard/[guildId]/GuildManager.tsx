@@ -14,7 +14,9 @@ export default function GuildManager({ guildId }: { guildId: string }) {
   const [channels, setChannels] = useState<Channel[]>([]);
   const [query, setQuery] = useState("");
   const [page, setPage] = useState(1);
-  const [config, setConfig] = useState<Record<string, { enabled?: boolean }>>({});
+  const [config, setConfig] = useState<
+    Record<string, { enabled?: boolean; vipRole?: string; channel?: string }>
+  >({});
   async function load(target = tab) {
     setLoading(true);
     setError("");
@@ -54,6 +56,16 @@ export default function GuildManager({ guildId }: { guildId: string }) {
     const data = await response.json();
     setConfig(data.config ?? data);
   }
+  async function saveBoost() {
+    const response = await fetch(`/api/guilds/${guildId}/config`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ boost: config.boost }),
+    });
+    if (!response.ok) return setError("Impossible d'enregistrer la configuration Boost.");
+    const data = await response.json();
+    setConfig(data.config ?? data);
+  }
   async function create(target: "roles" | "channels") {
     const name = window.prompt(target === "roles" ? "Nom du rôle" : "Nom du salon");
     if (!name) return;
@@ -73,7 +85,7 @@ export default function GuildManager({ guildId }: { guildId: string }) {
       <div className="rounded-2xl border bg-white/[.03] p-5">
         <h2 className="font-bold">Modules</h2>
         <div className="mt-3 flex flex-wrap gap-2">
-          {["welcome", "levels", "automod", "logs", "antiRaid"].map((section) => (
+          {["welcome", "levels", "automod", "logs", "antiRaid", "boost"].map((section) => (
             <button
               key={section}
               onClick={() => toggle(section)}
@@ -84,6 +96,33 @@ export default function GuildManager({ guildId }: { guildId: string }) {
               {section} : {config[section]?.enabled ? "activé" : "désactivé"}
             </button>
           ))}
+        </div>
+        <div className="mt-4 grid gap-2 md:grid-cols-2">
+          <input
+            value={config.boost?.vipRole ?? ""}
+            onChange={(event) =>
+              setConfig({
+                ...config,
+                boost: { ...(config.boost ?? {}), vipRole: event.target.value },
+              })
+            }
+            placeholder="ID du rôle VIP"
+            className="rounded-lg border bg-transparent px-3 py-2"
+          />
+          <input
+            value={config.boost?.channel ?? ""}
+            onChange={(event) =>
+              setConfig({
+                ...config,
+                boost: { ...(config.boost ?? {}), channel: event.target.value },
+              })
+            }
+            placeholder="ID du salon Boost"
+            className="rounded-lg border bg-transparent px-3 py-2"
+          />
+          <button onClick={saveBoost} className="rounded-lg border px-3 py-2 text-sm md:col-span-2">
+            Enregistrer Boost / VIP
+          </button>
         </div>
       </div>
       <div className="flex flex-wrap gap-2">

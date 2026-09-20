@@ -1,5 +1,6 @@
 import { SlashCommandBuilder } from "discord.js";
 import { getGuild, saveGuild } from "./_helpers.js";
+import { scheduleReminder } from "../timers.js";
 export const data = new SlashCommandBuilder()
   .setName("rappel")
   .setDescription("Programmer un rappel")
@@ -17,9 +18,6 @@ export async function execute(i) {
     at: Date.now() + i.options.getInteger("minutes") * 60_000,
   };
   await saveGuild(i.guildId, cfg);
-  setTimeout(
-    () => i.user.send(`⏰ Rappel : ${cfg.reminders[id].message}`).catch(() => {}),
-    i.options.getInteger("minutes") * 60_000,
-  );
+  scheduleReminder(i.client, i.guildId, id, cfg.reminders[id]);
   return i.reply({ content: "Rappel programmé.", ephemeral: true });
 }

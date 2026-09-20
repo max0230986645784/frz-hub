@@ -1,6 +1,12 @@
 import { NextResponse } from "next/server";
 import { botFetch } from "../../../../../../lib/bot-api";
-export async function DELETE(_: Request, { params }: { params: { id: string; roleId: string } }) {
+import { requireGuildAccess } from "../../../../../../lib/auth";
+export async function DELETE(
+  request: Request,
+  { params }: { params: { id: string; roleId: string } },
+) {
+  const access = await requireGuildAccess(request, params.id);
+  if ("response" in access) return access.response;
   const response = await botFetch(`/guilds/${params.id}/roles/${params.roleId}`, {
     method: "DELETE",
   });
