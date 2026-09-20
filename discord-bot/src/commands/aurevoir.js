@@ -1,0 +1,4 @@
+import { SlashCommandBuilder } from "discord.js";
+import { admin, getGuild, saveGuild, success } from "./_helpers.js";
+export const data = admin(new SlashCommandBuilder().setName("aurevoir").setDescription("Configurer les messages de départ").addSubcommand((s) => s.setName("config").setDescription("Configurer").addChannelOption((o) => o.setName("salon").setDescription("Salon").setRequired(true)).addStringOption((o) => o.setName("message").setDescription("Message").setRequired(true))));
+export async function execute(i) { const cfg = await getGuild(i.guildId); cfg.goodbye = { ...cfg.goodbye, enabled: true, channel: i.options.getChannel("salon").id, message: i.options.getString("message") }; await saveGuild(i.guildId, cfg); return i.reply({ embeds: [success("Message de départ configuré.")], ephemeral: true }); }

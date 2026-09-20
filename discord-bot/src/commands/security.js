@@ -1,0 +1,4 @@
+import { SlashCommandBuilder } from "discord.js";
+import { admin, getGuild, saveGuild, success } from "./_helpers.js";
+export const data = admin(new SlashCommandBuilder().setName("antiraid").setDescription("Configurer l'anti-raid").addBooleanOption((o) => o.setName("active").setDescription("Activer").setRequired(true)).addIntegerOption((o) => o.setName("seuil").setDescription("Arrivées").setRequired(true)).addIntegerOption((o) => o.setName("secondes").setDescription("Fenêtre").setRequired(true)));
+export async function execute(i) { const cfg = await getGuild(i.guildId); cfg.antiRaid = { enabled: i.options.getBoolean("active"), threshold: i.options.getInteger("seuil"), window: i.options.getInteger("secondes"), lockdown: false }; await saveGuild(i.guildId, cfg); return i.reply({ embeds: [success("Anti-raid configuré.")] }); }
