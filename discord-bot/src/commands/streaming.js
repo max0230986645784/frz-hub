@@ -1,0 +1,33 @@
+import {
+  SlashCommandBuilder,
+  EmbedBuilder,
+  ActionRowBuilder,
+  ButtonBuilder,
+  ButtonStyle,
+} from "discord.js";
+import { admin, getGuild, saveGuild, success } from "./_helpers.js";
+export const data = new SlashCommandBuilder()
+  .setName("stream")
+  .setDescription("Annoncer un stream")
+  .addStringOption((o) => o.setName("titre").setDescription("Titre").setRequired(true))
+  .addStringOption((o) => o.setName("url").setDescription("Lien du stream").setRequired(true))
+  .addStringOption((o) => o.setName("image").setDescription("Image").setRequired(false));
+export async function execute(i) {
+  const e = new EmbedBuilder()
+    .setColor(0x9146ff)
+    .setTitle(`🔴 ${i.options.getString("titre")}`)
+    .setDescription("Un live est en cours !")
+    .setURL(i.options.getString("url"));
+  if (i.options.getString("image")) e.setImage(i.options.getString("image"));
+  return i.reply({
+    embeds: [e],
+    components: [
+      new ActionRowBuilder().addComponents(
+        new ButtonBuilder()
+          .setLabel("Regarder")
+          .setStyle(ButtonStyle.Link)
+          .setURL(i.options.getString("url")),
+      ),
+    ],
+  });
+}

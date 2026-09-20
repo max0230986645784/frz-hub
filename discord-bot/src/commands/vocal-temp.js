@@ -1,0 +1,31 @@
+import { SlashCommandBuilder, ChannelType } from "discord.js";
+import { admin, getGuild, saveGuild, success } from "./_helpers.js";
+export const data = admin(
+  new SlashCommandBuilder()
+    .setName("vocal-temp")
+    .setDescription("Configurer les vocaux temporaires")
+    .addSubcommand((s) =>
+      s
+        .setName("config")
+        .setDescription("Définir le générateur")
+        .addChannelOption((o) =>
+          o
+            .setName("generateur")
+            .setDescription("Salon générateur")
+            .addChannelTypes(ChannelType.GuildVoice)
+            .setRequired(true),
+        )
+        .addChannelOption((o) =>
+          o.setName("categorie").setDescription("Catégorie").setRequired(true),
+        ),
+    ),
+);
+export async function execute(i) {
+  const cfg = await getGuild(i.guildId);
+  cfg.tempVoice = {
+    generator: i.options.getChannel("generateur").id,
+    category: i.options.getChannel("categorie").id,
+  };
+  await saveGuild(i.guildId, cfg);
+  return i.reply({ embeds: [success("Vocaux temporaires configurés.")] });
+}

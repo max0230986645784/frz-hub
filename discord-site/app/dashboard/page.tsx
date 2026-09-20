@@ -1,0 +1,61 @@
+import Link from "next/link";
+import { getSession } from "../../lib/session";
+import { isDashboardOwner } from "../../lib/auth";
+import { botJson } from "../../lib/bot-api";
+export default async function Dashboard() {
+  const session = await getSession();
+  if (!session || !isDashboardOwner(session.user.id))
+    return (
+      <main className="mx-auto max-w-xl px-6 py-24 text-center">
+        <h1 className="text-4xl font-black">Dashboard</h1>
+        <p className="mt-4 text-slate-400">
+          Connectez votre compte Discord pour gérer vos serveurs.
+        </p>
+        <a
+          href="/api/auth/login"
+          className="mt-8 inline-block rounded-xl bg-violet-600 px-6 py-3 font-bold"
+        >
+          Se connecter avec Discord
+        </a>
+      </main>
+    );
+  const botGuilds = (await botJson<{ id: string; name: string; icon?: string }[]>("/guilds")) ?? [];
+  return (
+    <main className="mx-auto max-w-6xl px-6 py-16">
+      <div className="flex items-center justify-between">
+        <div>
+          <p className="text-sm text-violet-300">Bonjour {session.user.username}</p>
+          <h1 className="text-4xl font-black">Vos serveurs</h1>
+        </div>
+        <a href="/api/auth/logout" className="text-sm text-slate-400">
+          Déconnexion
+        </a>
+      </div>
+      <div className="mt-10 grid gap-4 md:grid-cols-3">
+        {session.guilds.map((guild) => {
+          const installed = botGuilds.some((b) => b.id === guild.id);
+          return (
+            <article key={guild.id} className="rounded-2xl border bg-white/[.03] p-5">
+              <h2 className="font-bold">{guild.name}</h2>
+              {installed ? (
+                <Link
+                  href={`/dashboard/${guild.id}`}
+                  className="mt-5 inline-block text-sm text-violet-300"
+                >
+                  Ouvrir le dashboard →
+                </Link>
+              ) : (
+                <a
+                  href={`https://discord.com/oauth2/authorize?client_id=${process.env.NEXT_PUBLIC_DISCORD_CLIENT_ID}&scope=bot%20applications.commands&permissions=8&guild_id=${guild.id}`}
+                  className="mt-5 inline-block text-sm text-violet-300"
+                >
+                  Inviter Mr. Robot →
+                </a>
+              )}
+            </article>
+          );
+        })}
+      </div>
+    </main>
+  );
+}
