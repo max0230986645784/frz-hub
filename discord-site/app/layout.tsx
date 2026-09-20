@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import "./globals.css";
 export const metadata: Metadata = {
-  title: "Mr. Robot — Le bot Discord streaming",
-  description: "Le bot Discord français complet pour votre communauté de streaming.",
+  title: "Mr. Robot — Communauté films & séries",
+  description: "Le bot Discord français complet pour votre communauté films et séries.",
 };
 export default function Layout({ children }: { children: React.ReactNode }) {
   return (

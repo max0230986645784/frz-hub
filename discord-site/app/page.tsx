@@ -2,7 +2,11 @@ import Link from "next/link";
 import { commands } from "../lib/commands";
 const features = [
   ["🎫", "Tickets complets", "Catégories, rôles support, réclamation et transcripts HTML."],
-  ["📡", "Twitch en direct", "Alertes Helix, rôles live et planning de streams."],
+  [
+    "🎬",
+    "Films & séries",
+    "Une communauté organisée pour découvrir et discuter de vos programmes préférés.",
+  ],
   ["🛡️", "Anti-raid & automod", "Invitations, liens, spam, mots interdits et lockdown."],
   ["🔊", "Vocaux temporaires", "Chaque membre obtient son espace vocal privé."],
   ["📈", "Niveaux & économie", "XP, récompenses, daily, travail et classements."],
@@ -14,7 +18,7 @@ export default function Home() {
     <main>
       <section className="mx-auto max-w-6xl px-6 pb-24 pt-28 text-center">
         <div className="mx-auto mb-6 w-fit rounded-full border border-violet-400/30 bg-violet-400/10 px-4 py-2 text-sm text-violet-300">
-          Le bot français pensé pour le streaming
+          Le bot français pensé pour les communautés films & séries
         </div>
         <h1 className="text-5xl font-black tracking-tight md:text-7xl">
           Bienvenue sur <span className="text-violet-400">Mr. Robot</span>
@@ -53,9 +57,9 @@ export default function Home() {
       <section className="mx-auto mt-24 max-w-6xl rounded-3xl border border-violet-500/20 bg-violet-500/5 px-8 py-12">
         <h2 className="text-3xl font-black">Pourquoi mieux que DraftBot ?</h2>
         <p className="mt-4 max-w-3xl leading-7 text-slate-300">
-          Transcripts HTML et TXT envoyés en DM, vocaux temporaires, notifications Twitch fiables,
-          anti-raid configurable, dashboard complet et données JSON simples à héberger. Mr. Robot
-          reste lisible et personnalisable.
+          Transcripts HTML et TXT envoyés en DM, salons dédiés aux films et séries, anti-raid
+          configurable, dashboard complet et données JSON simples à héberger. Les alertes Twitch
+          restent disponibles comme module optionnel pour les communautés qui streament.
         </p>
       </section>
     </main>
