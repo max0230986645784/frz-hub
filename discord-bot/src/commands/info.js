@@ -1,3 +1,59 @@
 import { SlashCommandBuilder, EmbedBuilder } from "discord.js";
-export const data = new SlashCommandBuilder().setName("info").setDescription("Afficher des informations").addSubcommand((s) => s.setName("avatar").setDescription("Voir un avatar").addUserOption((o) => o.setName("membre").setDescription("Membre").setRequired(false))).addSubcommand((s) => s.setName("userinfo").setDescription("Voir un utilisateur").addUserOption((o) => o.setName("membre").setDescription("Membre").setRequired(false))).addSubcommand((s) => s.setName("serverinfo").setDescription("Voir le serveur")).addSubcommand((s) => s.setName("aide").setDescription("Afficher l'aide")).addSubcommand((s) => s.setName("ping").setDescription("Tester la latence"));
-export async function execute(i) { const sub = i.options.getSubcommand(); if (sub === "ping") return i.reply(`🏓 Pong ! ${i.client.ws.ping} ms`); if (sub === "aide") return i.reply({ embeds: [new EmbedBuilder().setTitle("Aide Mr. Robot").setDescription("`/mr-robot` : centre de contrôle, jeux et annonces\n`/moderation` : ban, unban, warn, unwarn, nuke, purge-liens\n`/niveaux` : config, add, remove, reset\n`/communaute` : sondages, giveaways, end, reroll\n`/invitation` : création, suivi et compteurs\n`/role auto-mot` : attribution par mot-clé\nToutes les autres commandes sont visibles avec la recherche `/`.")] }); if (sub === "serverinfo") return i.reply({ embeds: [new EmbedBuilder().setTitle(i.guild.name).setDescription(`Membres : ${i.guild.memberCount}\nSalons : ${i.guild.channels.cache.size}`)] }); const user = i.options.getUser("membre") ?? i.user; if (sub === "avatar") return i.reply({ embeds: [new EmbedBuilder().setTitle(`Avatar de ${user.tag}`).setImage(user.displayAvatarURL({ size: 1024 }))] }); return i.reply({ embeds: [new EmbedBuilder().setTitle(user.tag).setDescription(`Compte créé le ${user.createdAt.toLocaleDateString("fr-FR")}`)] }); }
+export const data = new SlashCommandBuilder()
+  .setName("info")
+  .setDescription("Afficher des informations")
+  .addSubcommand((s) =>
+    s
+      .setName("avatar")
+      .setDescription("Voir un avatar")
+      .addUserOption((o) => o.setName("membre").setDescription("Membre").setRequired(false)),
+  )
+  .addSubcommand((s) =>
+    s
+      .setName("userinfo")
+      .setDescription("Voir un utilisateur")
+      .addUserOption((o) => o.setName("membre").setDescription("Membre").setRequired(false)),
+  )
+  .addSubcommand((s) => s.setName("serverinfo").setDescription("Voir le serveur"))
+  .addSubcommand((s) => s.setName("aide").setDescription("Afficher l'aide"))
+  .addSubcommand((s) => s.setName("ping").setDescription("Tester la latence"));
+export async function execute(i) {
+  const sub = i.options.getSubcommand();
+  if (sub === "ping") return i.reply(`🏓 Pong ! ${i.client.ws.ping} ms`);
+  if (sub === "aide")
+    return i.reply({
+      embeds: [
+        new EmbedBuilder()
+          .setTitle("Aide Mr. Robot")
+          .setDescription(
+            "`/mr-robot` : centre de contrôle, jeux et annonces\n`/moderation` : ban, unban, warn, unwarn, nuke, purge-liens\n`/niveaux` : config, add, remove, reset\n`/communaute` : sondages, giveaways, end, reroll\n`/invitation` : création, suivi et compteurs\n`/role auto-mot` : attribution par mot-clé\nToutes les autres commandes sont visibles avec la recherche `/`.",
+          ),
+      ],
+    });
+  if (sub === "serverinfo")
+    return i.reply({
+      embeds: [
+        new EmbedBuilder()
+          .setTitle(i.guild.name)
+          .setDescription(
+            `Membres : ${i.guild.memberCount}\nSalons : ${i.guild.channels.cache.size}`,
+          ),
+      ],
+    });
+  const user = i.options.getUser("membre") ?? i.user;
+  if (sub === "avatar")
+    return i.reply({
+      embeds: [
+        new EmbedBuilder()
+          .setTitle(`Avatar de ${user.tag}`)
+          .setImage(user.displayAvatarURL({ size: 1024 })),
+      ],
+    });
+  return i.reply({
+    embeds: [
+      new EmbedBuilder()
+        .setTitle(user.tag)
+        .setDescription(`Compte créé le ${user.createdAt.toLocaleDateString("fr-FR")}`),
+    ],
+  });
+}

@@ -1,4 +1,33 @@
 import { SlashCommandBuilder } from "discord.js";
 import { admin, getGuild, saveGuild } from "./_helpers.js";
-export const data = admin(new SlashCommandBuilder().setName("autorole").setDescription("Gérer les rôles automatiques").addSubcommand((s) => s.setName("add").setDescription("Ajouter un rôle").addRoleOption((o) => o.setName("role").setDescription("Rôle").setRequired(true))).addSubcommand((s) => s.setName("remove").setDescription("Retirer un rôle").addRoleOption((o) => o.setName("role").setDescription("Rôle").setRequired(true))).addSubcommand((s) => s.setName("list").setDescription("Lister les rôles")));
-export async function execute(i) { const cfg = await getGuild(i.guildId); const id = i.options.getRole("role")?.id; if (i.options.getSubcommand() === "add") cfg.autorole.roles = [...new Set([...cfg.autorole.roles, id])]; if (i.options.getSubcommand() === "remove") cfg.autorole.roles = cfg.autorole.roles.filter((r) => r !== id); await saveGuild(i.guildId, cfg); return i.reply({ content: cfg.autorole.roles.map((r) => `<@&${r}>`).join(", ") || "Aucun rôle.", ephemeral: true }); }
+export const data = admin(
+  new SlashCommandBuilder()
+    .setName("autorole")
+    .setDescription("Gérer les rôles automatiques")
+    .addSubcommand((s) =>
+      s
+        .setName("add")
+        .setDescription("Ajouter un rôle")
+        .addRoleOption((o) => o.setName("role").setDescription("Rôle").setRequired(true)),
+    )
+    .addSubcommand((s) =>
+      s
+        .setName("remove")
+        .setDescription("Retirer un rôle")
+        .addRoleOption((o) => o.setName("role").setDescription("Rôle").setRequired(true)),
+    )
+    .addSubcommand((s) => s.setName("list").setDescription("Lister les rôles")),
+);
+export async function execute(i) {
+  const cfg = await getGuild(i.guildId);
+  const id = i.options.getRole("role")?.id;
+  if (i.options.getSubcommand() === "add")
+    cfg.autorole.roles = [...new Set([...cfg.autorole.roles, id])];
+  if (i.options.getSubcommand() === "remove")
+    cfg.autorole.roles = cfg.autorole.roles.filter((r) => r !== id);
+  await saveGuild(i.guildId, cfg);
+  return i.reply({
+    content: cfg.autorole.roles.map((r) => `<@&${r}>`).join(", ") || "Aucun rôle.",
+    ephemeral: true,
+  });
+}

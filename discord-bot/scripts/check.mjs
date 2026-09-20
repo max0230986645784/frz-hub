@@ -14,11 +14,14 @@ async function collect(dir) {
 }
 await collect(root);
 for (const file of files) execFileSync(process.execPath, ["--check", file], { stdio: "inherit" });
-const commandFiles = files.filter((file) => file.includes("/commands/") && !file.split("/").pop().startsWith("_"));
+const commandFiles = files.filter(
+  (file) => file.includes("/commands/") && !file.split("/").pop().startsWith("_"),
+);
 const names = new Map();
 for (const file of commandFiles) {
   const module = await import(file);
-  if (!module.data || typeof module.execute !== "function") throw new Error(`${relative(root, file)}: data/execute manquant`);
+  if (!module.data || typeof module.execute !== "function")
+    throw new Error(`${relative(root, file)}: data/execute manquant`);
   const name = module.data.name;
   if (!/^[a-z0-9-]+$/.test(name)) throw new Error(`${name}: nom de commande invalide`);
   if (names.has(name)) throw new Error(`Commande dupliquée: ${name}`);

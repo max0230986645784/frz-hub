@@ -6,16 +6,57 @@ const cache = new Map();
 const pending = new Map();
 const defaults = {
   tickets: { categories: [], counter: 0, transcriptChannel: null, open: {} },
-  automod: { invitations: true, links: false, spam: { count: 5, seconds: 8 }, capitals: false, massMentions: true, forbiddenWords: [], ignoredChannels: [], ignoredRoles: [], sanctions: { 3: "mute", 5: "kick" } },
-  levels: { enabled: true, cooldown: 60, announcementChannel: null, message: "Bravo {user}, tu passes niveau {level} !", rewards: {}, ignoredChannels: [], multiplier: 1 },
+  automod: {
+    invitations: true,
+    links: false,
+    linkWhitelist: [],
+    spam: { count: 5, seconds: 8 },
+    capitals: false,
+    massMentions: true,
+    forbiddenWords: [],
+    ignoredChannels: [],
+    ignoredRoles: [],
+    sanctions: { 3: "mute", 5: "kick" },
+  },
+  levels: {
+    enabled: true,
+    cooldown: 60,
+    announcementChannel: null,
+    message: "Bravo {user}, tu passes niveau {level} !",
+    rewards: {},
+    ignoredChannels: [],
+    multiplier: 1,
+  },
   logs: { channel: null, toggles: {} },
-  welcome: { enabled: false, channel: null, message: "Bienvenue {user} sur {server} !", embed: true },
-  goodbye: { enabled: false, channel: null, message: "{username} nous quitte. À bientôt !", embed: true },
+  welcome: {
+    enabled: false,
+    channel: null,
+    message: "Bienvenue {user} sur {server} !",
+    embed: true,
+  },
+  goodbye: {
+    enabled: false,
+    channel: null,
+    message: "{username} nous quitte. À bientôt !",
+    embed: true,
+  },
   autorole: { roles: [] },
-  warns: {}, xp: {}, economy: {}, twitch: { channels: [], live: {} }, giveaways: {}, polls: {}, reminders: {}, invites: { cache: {}, counts: {} }, roleKeywords: [], antiRaid: { enabled: false, threshold: 10, window: 10, lockdown: false },
-  tempVoice: { generator: null, category: null }
+  warns: {},
+  xp: {},
+  economy: {},
+  twitch: { channels: [], live: {} },
+  giveaways: {},
+  polls: {},
+  reminders: {},
+  suggestions: {},
+  invites: { cache: {}, counts: {} },
+  roleKeywords: [],
+  antiRaid: { enabled: false, threshold: 10, window: 10, lockdown: false },
+  tempVoice: { generator: null, category: null },
 };
-function fresh() { return structuredClone(defaults); }
+function fresh() {
+  return structuredClone(defaults);
+}
 export async function getGuild(id) {
   if (cache.has(id)) return cache.get(id);
   await mkdir(dataDir, { recursive: true });
@@ -33,11 +74,14 @@ export async function getGuild(id) {
 export async function saveGuild(id, config) {
   cache.set(id, config);
   clearTimeout(pending.get(id));
-  pending.set(id, setTimeout(async () => {
-    await mkdir(dataDir, { recursive: true });
-    await writeFile(join(dataDir, `${id}.json`), JSON.stringify(config, null, 2));
-    pending.delete(id);
-  }, 250));
+  pending.set(
+    id,
+    setTimeout(async () => {
+      await mkdir(dataDir, { recursive: true });
+      await writeFile(join(dataDir, `${id}.json`), JSON.stringify(config, null, 2));
+      pending.delete(id);
+    }, 250),
+  );
   return config;
 }
 export async function updateGuild(id, patch) {
