@@ -555,7 +555,8 @@ export async function createClient() {
   });
   return client;
 }
-if (process.env.DISCORD_TOKEN) {
+const isMain = process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href;
+if (isMain && process.env.DISCORD_TOKEN) {
   const client = await createClient();
   await client.login(process.env.DISCORD_TOKEN);
   process.on("unhandledRejection", (error) => console.error("Rejet non géré", error));
