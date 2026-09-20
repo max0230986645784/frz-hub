@@ -26,7 +26,7 @@ export async function execute(i) {
         new EmbedBuilder()
           .setTitle("Aide Mr. Robot")
           .setDescription(
-            "`/mr-robot` : centre de contrôle, jeux et annonces\n`/moderation` : ban, unban, warn, unwarn, nuke, purge-liens\n`/niveaux` : config, add, remove, reset\n`/communaute` : sondages, giveaways, end, reroll\n`/invitation` : création, suivi et compteurs\n`/role auto-mot` : attribution par mot-clé\nToutes les autres commandes sont visibles avec la recherche `/`.",
+            "`/mr-robot` : centre de contrôle, jeux, annonces et propriétaires\n`/moderation` : ban, unban, warn, unwarn, nuke, purge-liens\n`/niveaux` : config, add, remove, reset\n`/communaute` : sondages, giveaways, end, reroll\n`/invitation` : création, suivi et compteurs\n`/role auto-mot` : attribution par mot-clé\nToutes les autres commandes sont visibles avec la recherche `/`.",
           ),
       ],
     });

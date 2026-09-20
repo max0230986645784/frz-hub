@@ -29,5 +29,5 @@ export const commands: Command[] = [
   ["role", "Créer et attribuer des rôles et mots-clés", "Administration"],
   ["setup", "Installer la structure complète", "Administration"],
   ["membres", "Lister, chercher et compter les membres", "Administration"],
-  ["mr-robot", "Infos, statut, configuration, jeux et annonces", "Utilitaires"],
+  ["mr-robot", "Infos, statut, configuration, propriétaires, jeux et annonces", "Utilitaires"],
 ].map(([name, description, category]) => ({ name, description, category }));

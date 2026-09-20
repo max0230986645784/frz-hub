@@ -27,7 +27,8 @@ const request = (path) =>
 await new Promise((resolve) => setTimeout(resolve, 50));
 const health = await request("/health");
 const guilds = await request("/guilds");
-if (health.status !== 200 || guilds.status !== 200)
-  throw new Error(`Échec smoke API: ${health.status}/${guilds.status}`);
-console.log("OK: /health et /guilds");
+const owners = await request("/owners");
+if (health.status !== 200 || guilds.status !== 200 || owners.status !== 200)
+  throw new Error(`Échec smoke API: ${health.status}/${guilds.status}/${owners.status}`);
+console.log("OK: /health, /guilds et /owners");
 server.close();

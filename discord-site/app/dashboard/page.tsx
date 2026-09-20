@@ -1,9 +1,10 @@
 import Link from "next/link";
 import { getSession } from "../../lib/session";
+import { isDashboardOwner } from "../../lib/auth";
 import { botJson } from "../../lib/bot-api";
 export default async function Dashboard() {
   const session = await getSession();
-  if (!session)
+  if (!session || !isDashboardOwner(session.user.id))
     return (
       <main className="mx-auto max-w-xl px-6 py-24 text-center">
         <h1 className="text-4xl font-black">Dashboard</h1>

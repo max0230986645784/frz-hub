@@ -1,5 +1,6 @@
 import express from "express";
 import { getGuild, saveGuild } from "./store.js";
+import { getOwners } from "./utils/owners.js";
 let botClient;
 export function startApi(client) {
   botClient = client;
@@ -23,6 +24,7 @@ export function startApi(client) {
       })),
     ),
   );
+  app.get("/owners", async (_, res) => res.json({ owners: await getOwners() }));
   app.get("/guilds/:id", async (req, res) => {
     const guild = botClient.guilds.cache.get(req.params.id);
     if (!guild) return res.status(404).json({ error: "Serveur introuvable" });

@@ -5,7 +5,8 @@ import {
   EmbedBuilder,
   SlashCommandBuilder,
 } from "discord.js";
-import { admin, getGuild, saveGuild, success } from "./_helpers.js";
+import { getGuild, saveGuild, success } from "./_helpers.js";
+import { addOwner, getOwners, isOwner, removeOwner } from "../utils/owners.js";
 export const data = new SlashCommandBuilder()
   .setName("mr-robot")
   .setDescription("Le centre de contrôle de Mr. Robot")
@@ -13,6 +14,26 @@ export const data = new SlashCommandBuilder()
   .addSubcommand((s) => s.setName("statut").setDescription("Résumé de ce serveur"))
   .addSubcommand((s) => s.setName("config").setDescription("Voir et modifier les modules"))
   .addSubcommand((s) => s.setName("installation").setDescription("Assistant d'installation"))
+  .addSubcommandGroup((s) =>
+    s
+      .setName("proprietaires")
+      .setDescription("Gérer la liste des propriétaires")
+      .addSubcommand((owner) =>
+        owner
+          .setName("ajouter")
+          .setDescription("Ajouter un propriétaire")
+          .addUserOption((o) => o.setName("membre").setDescription("Membre").setRequired(true)),
+      )
+      .addSubcommand((owner) =>
+        owner
+          .setName("retirer")
+          .setDescription("Retirer un propriétaire")
+          .addUserOption((o) => o.setName("membre").setDescription("Membre").setRequired(true)),
+      )
+      .addSubcommand((owner) =>
+        owner.setName("liste").setDescription("Afficher les propriétaires"),
+      ),
+  )
   .addSubcommand((s) =>
     s
       .setName("dis")
@@ -37,12 +58,35 @@ export const data = new SlashCommandBuilder()
   );
 export async function execute(i) {
   const sub = i.options.getSubcommand();
+  const group = i.options.getSubcommandGroup(false);
   const e = (title, description) =>
     new EmbedBuilder()
       .setColor(0x7c3aed)
       .setTitle(title)
       .setDescription(description)
       .setFooter({ text: "Mr. Robot" });
+  if (group === "proprietaires") {
+    if (!(await isOwner(i.user.id)))
+      return i.reply({ content: "Réservé au propriétaire.", ephemeral: true });
+    if (sub === "ajouter") {
+      const owners = await addOwner(i.options.getUser("membre").id);
+      return i.reply({
+        content: `Propriétaires : ${owners.map((id) => `<@${id}>`).join(", ")}`,
+        ephemeral: true,
+      });
+    }
+    if (sub === "retirer") {
+      const owners = await removeOwner(i.options.getUser("membre").id);
+      return i.reply({
+        content: `Propriétaires : ${owners.map((id) => `<@${id}>`).join(", ") || "aucun"}`,
+        ephemeral: true,
+      });
+    }
+    return i.reply({
+      content: `Propriétaires : ${(await getOwners()).map((id) => `<@${id}>`).join(", ") || "aucun"}`,
+      ephemeral: true,
+    });
+  }
   if (sub === "infos")
     return i.reply({
       embeds: [

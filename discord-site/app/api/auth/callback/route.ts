@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { setSession } from "../../../../lib/session";
+import { isDashboardOwner } from "../../../../lib/auth";
 export async function GET(request: Request) {
   const params = new URL(request.url).searchParams;
   const code = params.get("code");
@@ -28,6 +29,8 @@ export async function GET(request: Request) {
     fetch("https://discord.com/api/users/@me", { headers }).then((r) => r.json()),
     fetch("https://discord.com/api/users/@me/guilds", { headers }).then((r) => r.json()),
   ]);
+  if (!isDashboardOwner(user.id))
+    return NextResponse.redirect(new URL("/?error=forbidden", request.url));
   await setSession({
     user: { id: user.id, username: user.username, avatar: user.avatar },
     guilds: guilds

@@ -12,11 +12,17 @@ const features = [
   ["📈", "Niveaux & économie", "XP, récompenses, daily, travail et classements."],
   ["⚙️", "Dashboard Vercel", "Configurez tout votre serveur depuis une interface moderne."],
 ];
-export default function Home() {
+export default function Home({ searchParams }: { searchParams?: { error?: string } }) {
   const invite = `https://discord.com/oauth2/authorize?client_id=${process.env.NEXT_PUBLIC_DISCORD_CLIENT_ID ?? ""}&scope=bot%20applications.commands&permissions=8`;
+  const communityInvite = process.env.NEXT_PUBLIC_DISCORD_INVITE;
   return (
     <main>
       <section className="mx-auto max-w-6xl px-6 pb-24 pt-28 text-center">
+        {searchParams?.error === "forbidden" && (
+          <div className="mx-auto mb-6 max-w-xl rounded-xl border border-red-400/30 bg-red-400/10 px-4 py-3 text-sm text-red-200">
+            Connexion refusée : ce dashboard est réservé aux propriétaires autorisés.
+          </div>
+        )}
         <div className="mx-auto mb-6 w-fit rounded-full border border-violet-400/30 bg-violet-400/10 px-4 py-2 text-sm text-violet-300">
           Le bot français pensé pour les communautés films & séries
         </div>
@@ -40,6 +46,16 @@ export default function Home() {
           >
             Dashboard
           </Link>
+          {communityInvite && (
+            <a
+              href={communityInvite}
+              target="_blank"
+              rel="noreferrer"
+              className="rounded-xl border border-violet-400/30 px-6 py-3 font-bold text-violet-200 hover:bg-violet-400/10"
+            >
+              Rejoindre le Discord
+            </a>
+          )}
         </div>
         <div className="mt-8 text-sm text-slate-500">
           {commands.length}+ commandes · JSON local · Déployable partout

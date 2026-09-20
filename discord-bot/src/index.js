@@ -19,6 +19,7 @@ import { startTwitchPoller } from "./utils/twitch.js";
 import { pollPresentation, rescheduleTimers } from "./timers.js";
 import { addWarning } from "./utils/warnings.js";
 import { levelForXp } from "./utils/levels.js";
+import { isOwner, ownerExempt, ownersConfigured } from "./utils/owners.js";
 
 export async function loadCommands() {
   const dir = join(fileURLToPath(new URL(".", import.meta.url)), "commands");
@@ -297,8 +298,15 @@ export async function createClient() {
   });
   client.on("interactionCreate", async (interaction) => {
     try {
-      if (interaction.isChatInputCommand())
+      if (interaction.isChatInputCommand()) {
+        if (
+          !ownerExempt(interaction) &&
+          (await ownersConfigured()) &&
+          !(await isOwner(interaction.user.id))
+        )
+          return interaction.reply({ content: "Réservé au propriétaire.", ephemeral: true });
         return await client.commands.get(interaction.commandName)?.execute(interaction);
+      }
       if (interaction.isStringSelectMenu() && interaction.customId === "ticket:select")
         return interaction.reply({
           content: `Ticket créé : ${await createTicket(interaction, interaction.values[0])}`,

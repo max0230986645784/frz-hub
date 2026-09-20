@@ -6,10 +6,12 @@ Mr. Robot est un bot Discord français complet pour les communautés de streamin
 
 1. Créez une application sur [Discord Developer Portal](https://discord.com/developers/applications), ajoutez un bot et activez les trois **Privileged Gateway Intents** (présence, membres, contenu des messages).
 2. Invitez-le avec les scopes `bot` et `applications.commands` et la permission Administrator.
-3. Copiez `.env.example` vers `.env`, puis renseignez `DISCORD_TOKEN`, `CLIENT_ID`, éventuellement `DEV_GUILD_ID`, `API_SECRET`, et les identifiants Twitch.
+3. Copiez `.env.example` vers `.env`, puis renseignez `DISCORD_TOKEN`, `CLIENT_ID`, éventuellement `DEV_GUILD_ID`, `API_SECRET`, `OWNER_IDS` (identifiants Discord séparés par des virgules), et les identifiants Twitch.
 4. Lancez `npm install`, `npm run deploy`, puis `npm start`.
 
 Les données sont écrites en JSON dans `data/` (un fichier par serveur). Le dossier est ignoré par Git.
+
+Si `OWNER_IDS` est défini, les commandes d'administration sont réservées aux propriétaires indiqués. La liste peut aussi être gérée par `/mr-robot proprietaires ajouter`, `retirer` et `liste`; elle est conservée dans `config/owners.json`. L'API protégée expose cette liste via `GET /owners`.
 
 ## Hébergement
 
